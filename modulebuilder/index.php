@@ -6490,6 +6490,7 @@ if ($module == 'initmodule') {
 print dol_get_fiche_end(); // End modules
 
 
+
 // End of page
 llxFooter();
 $db->close();

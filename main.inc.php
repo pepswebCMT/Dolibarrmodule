@@ -3826,5 +3826,7 @@ if (!function_exists("llxFooter")) {
 
 		print "</body>\n";
 		print "</html>\n";
+
+		
 	}
 }
