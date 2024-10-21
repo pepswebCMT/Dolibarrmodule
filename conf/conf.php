@@ -5,32 +5,35 @@
 // Take a look at conf.php.example file for an example of conf.php file
 // and explanations for all possibles parameters.
 //
-$dolibarr_main_url_root='http://localhost/htdocs';
-$dolibarr_main_document_root='C:/xampp/htdocs/htdocs';
-$dolibarr_main_url_root_alt='/custom';
-$dolibarr_main_document_root_alt='C:/xampp/htdocs/htdocs/custom';
-$dolibarr_main_data_root='C:/xampp/htdocs/documents';
-$dolibarr_main_db_host='localhost';
-$dolibarr_main_db_port='3306';
-$dolibarr_main_db_name='dolibarrv2';
-$dolibarr_main_db_prefix='llx_';
-$dolibarr_main_db_user='root';
-$dolibarr_main_db_pass='';
-$dolibarr_main_db_type='mysqli';
-$dolibarr_main_db_character_set='utf8';
-$dolibarr_main_db_collation='utf8_unicode_ci';
+$dolibarr_main_url_root = 'http://localhost/htdocs';
+$dolibarr_main_document_root = 'C:/xampp/htdocs/htdocs';
+$dolibarr_main_url_root_alt = '/custom';
+$dolibarr_main_document_root_alt = 'C:/xampp/htdocs/htdocs/custom';
+$dolibarr_main_data_root = 'C:/xampp/htdocs/documents';
+$dolibarr_main_db_host = 'localhost';
+$dolibarr_main_db_port = '3306';
+$dolibarr_main_db_name = 'dolibarrv2';
+$dolibarr_main_db_prefix = 'llx_';
+$dolibarr_main_db_user = 'root';
+$dolibarr_main_db_pass = '';
+$dolibarr_main_db_type = 'mysqli';
+$dolibarr_main_db_character_set = 'utf8';
+$dolibarr_main_db_collation = 'utf8_unicode_ci';
 // Authentication settings
-$dolibarr_main_authentication='dolibarr';
+$dolibarr_main_authentication = 'dolibarr';
 
 //$dolibarr_main_demo='autologin,autopass';
 // Security settings
-$dolibarr_main_prod='0';
-$dolibarr_main_force_https='0';
-$dolibarr_main_restrict_os_commands='mariadb-dump, mariadb, mysqldump, mysql, pg_dump, pgrestore, clamdscan, clamscan.exe';
-$dolibarr_nocsrfcheck='0';
-$dolibarr_main_instance_unique_id='78db0f5fcb012a4c0f4488e0fc37dbdc';
-$dolibarr_mailing_limit_sendbyweb='0';
-$dolibarr_mailing_limit_sendbycli='0';
+$dolibarr_main_prod = '0';
+$dolibarr_main_log_handler = 'file'; // Log vers un fichier
+$dolibarr_main_log_level = 'DEBUG'; // Niveau de log à DEBUG pour capturer les requêtes SQL
+$dolibarr_main_log_directory = 'C:\xampp\htdocs\htdocs\logs';
+$dolibarr_main_force_https = '0';
+$dolibarr_main_restrict_os_commands = 'mariadb-dump, mariadb, mysqldump, mysql, pg_dump, pgrestore, clamdscan, clamscan.exe';
+$dolibarr_nocsrfcheck = '0';
+$dolibarr_main_instance_unique_id = '78db0f5fcb012a4c0f4488e0fc37dbdc';
+$dolibarr_mailing_limit_sendbyweb = '0';
+$dolibarr_mailing_limit_sendbycli = '0';
 
 //$dolibarr_lib_FPDF_PATH='';
 //$dolibarr_lib_TCPDF_PATH='';
@@ -46,4 +49,4 @@ $dolibarr_mailing_limit_sendbycli='0';
 
 //$dolibarr_font_DOL_DEFAULT_TTF='';
 //$dolibarr_font_DOL_DEFAULT_TTF_BOLD='';
-$dolibarr_main_distrib='standard';
+$dolibarr_main_distrib = 'standard';

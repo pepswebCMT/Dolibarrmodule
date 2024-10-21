@@ -14,6 +14,5 @@ llxHeader('', 'My Module Page');
 print_fiche_titre("Bienvenue sur My Module");
 print '<p>Ceci est la page principale de votre module.</p>';
 
-
 // Fin de la page
 llxFooter();
