@@ -22,11 +22,11 @@ if ($result > 0) {
     echo "<p>Erreur lors de l'activation du module : " . $mymodule->error . "</p>";
 }
 
-// Test de la désactivation
-echo "<h1>Test de la désactivation du module</h1>";
-$result = $mymodule->remove();
-if ($result > 0) {
-    echo "<p>Le module a été désactivé et les tables ont été supprimées avec succès.</p>";
-} else {
-    echo "<p>Erreur lors de la désactivation du module : " . $mymodule->error . "</p>";
-}
+// // Test de la désactivation
+// echo "<h1>Test de la désactivation du module</h1>";
+// $result = $mymodule->remove();
+// if ($result > 0) {
+//     echo "<p>Le module a été désactivé et les tables ont été supprimées avec succès.</p>";
+// } else {
+//     echo "<p>Erreur lors de la désactivation du module : " . $mymodule->error . "</p>";
+// }
