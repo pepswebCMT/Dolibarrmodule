@@ -17,34 +17,34 @@
 # Generic
 #
 
-# Module label 'ModuleTestName'
-ModuleTestName = Test
-# Module description 'ModuleTestDesc'
-ModuleTestDesc = Test description
+# Module label 'ModuleBilanCarbonneName'
+ModuleBilanCarbonneName = BilanCarbonne
+# Module description 'ModuleBilanCarbonneDesc'
+ModuleBilanCarbonneDesc = BilanCarbonne description
 
 #
 # Admin page
 #
-TestSetup = Test setup
+BilanCarbonneSetup = BilanCarbonne setup
 Settings = Settings
-TestSetupPage = Test setup page
-TEST_MYPARAM1 = My param 1
-TEST_MYPARAM1Tooltip = My param 1 tooltip
-TEST_MYPARAM2=My param 2
-TEST_MYPARAM2Tooltip=My param 2 tooltip
+BilanCarbonneSetupPage = BilanCarbonne setup page
+BILANCARBONNE_MYPARAM1 = My param 1
+BILANCARBONNE_MYPARAM1Tooltip = My param 1 tooltip
+BILANCARBONNE_MYPARAM2=My param 2
+BILANCARBONNE_MYPARAM2Tooltip=My param 2 tooltip
 
 
 #
 # About page
 #
 About = About
-TestAbout = About Test
-TestAboutPage = Test about page
+BilanCarbonneAbout = About BilanCarbonne
+BilanCarbonneAboutPage = BilanCarbonne about page
 
 #
 # Sample page
 #
-TestArea = Home Test
+BilanCarbonneArea = Home BilanCarbonne
 MyPageName = My page name
 
 #

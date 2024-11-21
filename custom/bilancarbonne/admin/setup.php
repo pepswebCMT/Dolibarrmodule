@@ -17,9 +17,9 @@
  */
 
 /**
- * \file    test/admin/setup.php
- * \ingroup test
- * \brief   Test setup page.
+ * \file    bilancarbonne/admin/setup.php
+ * \ingroup bilancarbonne
+ * \brief   BilanCarbonne setup page.
  */
 
 // Load Dolibarr environment
@@ -55,14 +55,14 @@ global $langs, $user;
 
 // Libraries
 require_once DOL_DOCUMENT_ROOT."/core/lib/admin.lib.php";
-require_once '../lib/test.lib.php';
+require_once '../lib/bilancarbonne.lib.php';
 //require_once "../class/myclass.class.php";
 
 // Translations
-$langs->loadLangs(array("admin", "test@test"));
+$langs->loadLangs(array("admin", "bilancarbonne@bilancarbonne"));
 
 // Initialize technical object to manage hooks of page. Note that conf->hooks_modules contains array of hook context
-$hookmanager->initHooks(array('testsetup', 'globalsetup'));
+$hookmanager->initHooks(array('bilancarbonnesetup', 'globalsetup'));
 
 // Access control
 if (!$user->admin) {
@@ -95,33 +95,33 @@ $formSetup = new FormSetup($db);
 // Enter here all parameters in your setup page
 
 // Setup conf for selection of an URL
-$item = $formSetup->newItem('TEST_MYPARAM1');
+$item = $formSetup->newItem('BILANCARBONNE_MYPARAM1');
 $item->fieldOverride = (empty($_SERVER['HTTPS']) ? 'http://' : 'https://') . $_SERVER['HTTP_HOST'];
 $item->cssClass = 'minwidth500';
 
 // Setup conf for selection of a simple string input
-$item = $formSetup->newItem('TEST_MYPARAM2');
+$item = $formSetup->newItem('BILANCARBONNE_MYPARAM2');
 $item->defaultFieldValue = 'default value';
 
 // Setup conf for selection of a simple textarea input but we replace the text of field title
-$item = $formSetup->newItem('TEST_MYPARAM3');
+$item = $formSetup->newItem('BILANCARBONNE_MYPARAM3');
 $item->nameText = $item->getNameText().' more html text ';
 
 // Setup conf for a selection of a thirdparty
-$item = $formSetup->newItem('TEST_MYPARAM4');
+$item = $formSetup->newItem('BILANCARBONNE_MYPARAM4');
 $item->setAsThirdpartyType();
 
 // Setup conf for a selection of a boolean
-$formSetup->newItem('TEST_MYPARAM5')->setAsYesNo();
+$formSetup->newItem('BILANCARBONNE_MYPARAM5')->setAsYesNo();
 
 // Setup conf for a selection of an email template of type thirdparty
-$formSetup->newItem('TEST_MYPARAM6')->setAsEmailTemplate('thirdparty');
+$formSetup->newItem('BILANCARBONNE_MYPARAM6')->setAsEmailTemplate('thirdparty');
 
 // Setup conf for a selection of a secured key
-//$formSetup->newItem('TEST_MYPARAM7')->setAsSecureKey();
+//$formSetup->newItem('BILANCARBONNE_MYPARAM7')->setAsSecureKey();
 
 // Setup conf for a selection of a product
-$formSetup->newItem('TEST_MYPARAM8')->setAsProduct();
+$formSetup->newItem('BILANCARBONNE_MYPARAM8')->setAsProduct();
 
 // Add a title for a new section
 $formSetup->newItem('NewSection')->setAsTitle();
@@ -136,17 +136,17 @@ $TField = array(
 );
 
 // Setup conf for a simple combo list
-$formSetup->newItem('TEST_MYPARAM9')->setAsSelect($TField);
+$formSetup->newItem('BILANCARBONNE_MYPARAM9')->setAsSelect($TField);
 
 // Setup conf for a multiselect combo list
-$item = $formSetup->newItem('TEST_MYPARAM10');
+$item = $formSetup->newItem('BILANCARBONNE_MYPARAM10');
 $item->setAsMultiSelect($TField);
-$item->helpText = $langs->transnoentities('TEST_MYPARAM10');
+$item->helpText = $langs->transnoentities('BILANCARBONNE_MYPARAM10');
 
 
 
-// Setup conf TEST_MYPARAM10
-$item = $formSetup->newItem('TEST_MYPARAM10');
+// Setup conf BILANCARBONNE_MYPARAM10
+$item = $formSetup->newItem('BILANCARBONNE_MYPARAM10');
 $item->setAsColor();
 $item->defaultFieldValue = '#FF0000';
 $item->nameText = $item->getNameText().' more html text ';
@@ -205,7 +205,7 @@ if ($action == 'updateMask') {
 	$filefound = 0;
 	$dirmodels = array_merge(array('/'), (array) $conf->modules_parts['models']);
 	foreach ($dirmodels as $reldir) {
-		$file = dol_buildpath($reldir."core/modules/test/doc/pdf_".$modele."_".strtolower($tmpobjectkey).".modules.php", 0);
+		$file = dol_buildpath($reldir."core/modules/bilancarbonne/doc/pdf_".$modele."_".strtolower($tmpobjectkey).".modules.php", 0);
 		if (file_exists($file)) {
 			$filefound = 1;
 			$classname = "pdf_".$modele."_".strtolower($tmpobjectkey);
@@ -219,7 +219,7 @@ if ($action == 'updateMask') {
 		$module = new $classname($db);
 
 		if ($module->write_file($tmpobject, $langs) > 0) {
-			header("Location: ".DOL_URL_ROOT."/document.php?modulepart=test-".strtolower($tmpobjectkey)."&file=SPECIMEN.pdf");
+			header("Location: ".DOL_URL_ROOT."/document.php?modulepart=bilancarbonne-".strtolower($tmpobjectkey)."&file=SPECIMEN.pdf");
 			return;
 		} else {
 			setEventMessages($module->error, null, 'errors');
@@ -233,7 +233,7 @@ if ($action == 'updateMask') {
 	// TODO Check if numbering module chosen can be activated by calling method canBeActivated
 	$tmpobjectkey = GETPOST('object');
 	if (!empty($tmpobjectkey)) {
-		$constforval = 'TEST_'.strtoupper($tmpobjectkey)."_ADDON";
+		$constforval = 'BILANCARBONNE_'.strtoupper($tmpobjectkey)."_ADDON";
 		dolibarr_set_const($db, $constforval, $value, 'chaine', 0, '', $conf->entity);
 	}
 } elseif ($action == 'set') {
@@ -244,7 +244,7 @@ if ($action == 'updateMask') {
 	if ($ret > 0) {
 		$tmpobjectkey = GETPOST('object');
 		if (!empty($tmpobjectkey)) {
-			$constforval = 'TEST_'.strtoupper($tmpobjectkey).'_ADDON_PDF';
+			$constforval = 'BILANCARBONNE_'.strtoupper($tmpobjectkey).'_ADDON_PDF';
 			if (getDolGlobalString($constforval) == "$value") {
 				dolibarr_del_const($db, $constforval, $conf->entity);
 			}
@@ -254,7 +254,7 @@ if ($action == 'updateMask') {
 	// Set or unset default model
 	$tmpobjectkey = GETPOST('object');
 	if (!empty($tmpobjectkey)) {
-		$constforval = 'TEST_'.strtoupper($tmpobjectkey).'_ADDON_PDF';
+		$constforval = 'BILANCARBONNE_'.strtoupper($tmpobjectkey).'_ADDON_PDF';
 		if (dolibarr_set_const($db, $constforval, $value, 'chaine', 0, '', $conf->entity)) {
 			// The constant that was read before the new set
 			// We therefore requires a variable to have a coherent view
@@ -270,7 +270,7 @@ if ($action == 'updateMask') {
 } elseif ($action == 'unsetdoc') {
 	$tmpobjectkey = GETPOST('object');
 	if (!empty($tmpobjectkey)) {
-		$constforval = 'TEST_'.strtoupper($tmpobjectkey).'_ADDON_PDF';
+		$constforval = 'BILANCARBONNE_'.strtoupper($tmpobjectkey).'_ADDON_PDF';
 		dolibarr_del_const($db, $constforval, $conf->entity);
 	}
 }
@@ -284,9 +284,9 @@ if ($action == 'updateMask') {
 $form = new Form($db);
 
 $help_url = '';
-$page_name = "TestSetup";
+$page_name = "BilanCarbonneSetup";
 
-llxHeader('', $langs->trans($page_name), $help_url, '', 0, 0, '', '', '', 'mod-test page-admin');
+llxHeader('', $langs->trans($page_name), $help_url, '', 0, 0, '', '', '', 'mod-bilancarbonne page-admin');
 
 // Subheader
 $linkback = '<a href="'.($backtopage ? $backtopage : DOL_URL_ROOT.'/admin/modules.php?restore_lastsearch_values=1').'">'.$langs->trans("BackToModuleList").'</a>';
@@ -294,11 +294,11 @@ $linkback = '<a href="'.($backtopage ? $backtopage : DOL_URL_ROOT.'/admin/module
 print load_fiche_titre($langs->trans($page_name), $linkback, 'title_setup');
 
 // Configuration header
-$head = testAdminPrepareHead();
-print dol_get_fiche_head($head, 'settings', $langs->trans($page_name), -1, "test@test");
+$head = bilancarbonneAdminPrepareHead();
+print dol_get_fiche_head($head, 'settings', $langs->trans($page_name), -1, "bilancarbonne@bilancarbonne");
 
 // Setup page goes here
-echo '<span class="opacitymedium">'.$langs->trans("TestSetupPage").'</span><br><br>';
+echo '<span class="opacitymedium">'.$langs->trans("BilanCarbonneSetupPage").'</span><br><br>';
 
 
 if ($action == 'edit') {
@@ -314,7 +314,7 @@ if ($action == 'edit') {
 }
 
 
-$moduledir = 'test';
+$moduledir = 'bilancarbonne';
 $myTmpObjects = array();
 // TODO Scan list of objects
 $myTmpObjects['myobject'] = array('label'=>'MyObject', 'includerefgeneration'=>0, 'includedocgeneration'=>0, 'class'=>'MyObject');
@@ -383,7 +383,7 @@ foreach ($myTmpObjects as $myTmpObjectKey => $myTmpObjectArray) {
 								print '</td>'."\n";
 
 								print '<td class="center">';
-								$constforvar = 'TEST_'.strtoupper($myTmpObjectKey).'_ADDON';
+								$constforvar = 'BILANCARBONNE_'.strtoupper($myTmpObjectKey).'_ADDON';
 								if (getDolGlobalString($constforvar) == $file) {
 									print img_picto($langs->trans("Activated"), 'switch_on');
 								} else {
@@ -526,7 +526,7 @@ foreach ($myTmpObjects as $myTmpObjectKey => $myTmpObjectArray) {
 
 										// Default
 										print '<td class="center">';
-										$constforvar = 'TEST_'.strtoupper($myTmpObjectKey).'_ADDON_PDF';
+										$constforvar = 'BILANCARBONNE_'.strtoupper($myTmpObjectKey).'_ADDON_PDF';
 										if (getDolGlobalString($constforvar) == $name) {
 											//print img_picto($langs->trans("Default"), 'on');
 											// Even if choice is the default value, we allow to disable it. Replace this with previous line if you need to disable unset

@@ -1,11 +1,11 @@
-# TEST FOR [DOLIBARR ERP CRM](https://www.dolibarr.org)
+# BILANCARBONNE FOR [DOLIBARR ERP CRM](https://www.dolibarr.org)
 
 ## Features
 
 Description of the module...
 
 <!--
-![Screenshot test](img/screenshot_test.png?raw=true "Test"){imgmd}
+![Screenshot bilancarbonne](img/screenshot_bilancarbonne.png?raw=true "BilanCarbonne"){imgmd}
 -->
 
 Other external modules are available on [Dolistore.com](https://www.dolistore.com).
@@ -66,11 +66,11 @@ Note: If this screen tell you that there is no "custom" directory, check that yo
 
 ### From a GIT repository
 
-Clone the repository in ```$dolibarr_main_document_root_alt/test```
+Clone the repository in ```$dolibarr_main_document_root_alt/bilancarbonne```
 
 ```sh
 cd ....../custom
-git clone git@github.com:gitlogin/test.git test
+git clone git@github.com:gitlogin/bilancarbonne.git bilancarbonne
 ```
 
 -->

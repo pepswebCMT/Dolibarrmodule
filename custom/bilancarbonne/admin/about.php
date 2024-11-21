@@ -17,9 +17,9 @@
  */
 
 /**
- * \file    test/admin/about.php
- * \ingroup test
- * \brief   About page of module Test.
+ * \file    bilancarbonne/admin/about.php
+ * \ingroup bilancarbonne
+ * \brief   About page of module BilanCarbonne.
  */
 
 // Load Dolibarr environment
@@ -54,10 +54,10 @@ if (!$res) {
 // Libraries
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
-require_once '../lib/test.lib.php';
+require_once '../lib/bilancarbonne.lib.php';
 
 // Translations
-$langs->loadLangs(array("errors", "admin", "test@test"));
+$langs->loadLangs(array("errors", "admin", "bilancarbonne@bilancarbonne"));
 
 // Access control
 if (!$user->admin) {
@@ -83,9 +83,9 @@ $backtopage = GETPOST('backtopage', 'alpha');
 $form = new Form($db);
 
 $help_url = '';
-$page_name = "TestAbout";
+$page_name = "BilanCarbonneAbout";
 
-llxHeader('', $langs->trans($page_name), $help_url, '', 0, 0, '', '', '', 'mod-test page-admin_about');
+llxHeader('', $langs->trans($page_name), $help_url, '', 0, 0, '', '', '', 'mod-bilancarbonne page-admin_about');
 
 // Subheader
 $linkback = '<a href="'.($backtopage ? $backtopage : DOL_URL_ROOT.'/admin/modules.php?restore_lastsearch_values=1').'">'.$langs->trans("BackToModuleList").'</a>';
@@ -93,11 +93,11 @@ $linkback = '<a href="'.($backtopage ? $backtopage : DOL_URL_ROOT.'/admin/module
 print load_fiche_titre($langs->trans($page_name), $linkback, 'title_setup');
 
 // Configuration header
-$head = testAdminPrepareHead();
-print dol_get_fiche_head($head, 'about', $langs->trans($page_name), 0, 'test@test');
+$head = bilancarbonneAdminPrepareHead();
+print dol_get_fiche_head($head, 'about', $langs->trans($page_name), 0, 'bilancarbonne@bilancarbonne');
 
-dol_include_once('/test/core/modules/modTest.class.php');
-$tmpmodule = new modTest($db);
+dol_include_once('/bilancarbonne/core/modules/modBilanCarbonne.class.php');
+$tmpmodule = new modBilanCarbonne($db);
 print $tmpmodule->getDescLong();
 
 // Page end
