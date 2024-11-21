@@ -29,7 +29,7 @@
 $res = 0;
 // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
 if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-    $res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
+	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
 }
 // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
 $tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
@@ -37,27 +37,27 @@ $tmp2 = realpath(__FILE__);
 $i = strlen($tmp) - 1;
 $j = strlen($tmp2) - 1;
 while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-    $i--;
-    $j--;
+	$i--;
+	$j--;
 }
 if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1)) . "/main.inc.php")) {
-    $res = require_once substr($tmp, 0, ($i + 1)) . "/main.inc.php";
+	$res = require_once substr($tmp, 0, ($i + 1)) . "/main.inc.php";
 }
 if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php")) {
-    $res = require_once dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php";
+	$res = require_once dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php";
 }
 // Try main.inc.php using relative path
 if (!$res && file_exists("../main.inc.php")) {
-    $res = require_once "../main.inc.php";
+	$res = require_once "../main.inc.php";
 }
 if (!$res && file_exists("../../main.inc.php")) {
-    $res = require_once "../../main.inc.php";
+	$res = require_once "../../main.inc.php";
 }
 if (!$res && file_exists("../../../main.inc.php")) {
-    $res = require_once "../../../main.inc.php";
+	$res = require_once "../../../main.inc.php";
 }
 if (!$res) {
-    die("Include of main fails");
+	die("Include of main fails");
 }
 
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
@@ -73,8 +73,8 @@ $now = dol_now();
 // Security check - Protection if external user
 $socid = GETPOST('socid', 'int');
 if (isset($user->socid) && $user->socid > 0) {
-    $action = '';
-    $socid = $user->socid;
+	$action = '';
+	$socid = $user->socid;
 }
 
 // Security check (enable the most restrictive one)
@@ -204,19 +204,23 @@ print '<th><a href="?action=list&year=' . $year . '&sort=commande_id&order=' . (
 print '<th><a href="?action=list&year=' . $year . '&sort=product_ref&order=' . ($sort == 'product_ref' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Référence Produit</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=qty&order=' . ($sort == 'qty' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Quantité</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Poids (kg)</a></th>';
+print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Nom de la société</a></th>';
+print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Société</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=date_commande&order=' . ($sort == 'date_commande' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Date de Commande</a></th>';
 print '</tr>';
 
 
 // Affichage des données des commandes
 foreach ($orders as $order) {
-    print '<tr>';
-    print '<td>' . $order->commande_id . '</td>';
-    print '<td>' . $order->product_ref . '</td>';
-    print '<td>' . $order->qty . '</td>';
-    print '<td>' . $order->weight . '</td>';
-    print '<td>' . dol_print_date($order->date_commande, 'day') . '</td>';
-    print '</tr>';
+	print '<tr>';
+	print '<td>' . $order->ref . '</td>';
+	print '<td>' . $order->product_ref . '</td>';
+	print '<td>' . $order->qty . '</td>';
+	print '<td>' . $order->weight . '</td>';
+	print '<td>' . $order->nom . '</td>';
+	print '<td>' . $order->address . " " . $order->town . " " . $order->zip . '</td>';
+	print '<td>' . dol_print_date($order->date_commande, 'day') . '</td>';
+	print '</tr>';
 }
 
 print '</table>';
@@ -230,11 +234,11 @@ print 'Total Pages: ' . $total_pages . '<br>';
 print '<div class="pagination">';
 // Formulaire pour la page précédente
 if ($page > 0) {
-    print '<form method="POST" action="" style="display: inline;">';
-    print '<input type="hidden" name="action" value="list">';
-    print '<input type="hidden" name="page" value="' . ($page - 1) . '">';
-    print '<button type="submit">&laquo; Précédent</button>';
-    print '</form>';
+	print '<form method="POST" action="" style="display: inline;">';
+	print '<input type="hidden" name="action" value="list">';
+	print '<input type="hidden" name="page" value="' . ($page - 1) . '">';
+	print '<button type="submit">&laquo; Précédent</button>';
+	print '</form>';
 }
 
 // Affichage de la page actuelle
@@ -242,11 +246,11 @@ print '<span>Page ' . ($page + 1) . ' / ' . $total_pages . '</span>';
 
 // Formulaire pour la page suivante
 if ($page < $total_pages - 1) {
-    print '<form method="POST" action="" style="display: inline;">';
-    print '<input type="hidden" name="action" value="list">';
-    print '<input type="hidden" name="page" value="' . ($page + 1) . '">';
-    print '<button type="submit">Suivant &raquo;</button>';
-    print '</form>';
+	print '<form method="POST" action="" style="display: inline;">';
+	print '<input type="hidden" name="action" value="list">';
+	print '<input type="hidden" name="page" value="' . ($page + 1) . '">';
+	print '<button type="submit">Suivant &raquo;</button>';
+	print '</form>';
 }
 
 print '</div>';

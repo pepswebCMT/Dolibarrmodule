@@ -23,18 +23,27 @@ class MyOrderModel
 
         // Construction de la requête SQL avec échappement pour $year
         $sql = "SELECT 
-                    c.rowid AS commande_id,
+                    c.rowid,
+                    c.ref,
                     c.date_commande,
                     cd.fk_product,
                     cd.qty,
                     p.weight,
-                    p.ref AS product_ref
+                    p.ref AS product_ref,
+                    s.rowid, 
+                    s.nom,
+                    s.address, 
+                    s.zip, 
+                    s.town
+
                 FROM 
                     " . MAIN_DB_PREFIX . "commande c
                 INNER JOIN 
                     " . MAIN_DB_PREFIX . "commandedet cd ON c.rowid = cd.fk_commande
                 INNER JOIN 
                     " . MAIN_DB_PREFIX . "product p ON cd.fk_product = p.rowid
+                INNER JOIN 
+                    " . MAIN_DB_PREFIX . "societe s ON s.rowid = c.fk_soc
                 WHERE 
                     YEAR(c.date_commande) = " . $this->db->escape($year) . "
                 ORDER BY 
