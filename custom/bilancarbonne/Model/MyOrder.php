@@ -44,8 +44,10 @@ class MyOrderModel
                     " . MAIN_DB_PREFIX . "product p ON cd.fk_product = p.rowid
                 INNER JOIN 
                     " . MAIN_DB_PREFIX . "societe s ON s.rowid = c.fk_soc
-                WHERE 
-                    YEAR(c.date_commande) = " . $this->db->escape($year) . "
+               WHERE 
+                    YEAR(c.date_commande) = " . $this->db->escape($year) . " 
+                AND p.ref NOT LIKE 'frais_de_port%'
+                AND p.ref NOT LIKE '%PrestaShipping%'
                 ORDER BY 
                     $sort $order";
 
@@ -65,6 +67,7 @@ class MyOrderModel
 
         return $orders;
     }
+
     public function getAvailableYears()
     {
         $sql = "SELECT DISTINCT YEAR(date_commande) AS year FROM " . MAIN_DB_PREFIX . "commande ORDER BY year DESC";

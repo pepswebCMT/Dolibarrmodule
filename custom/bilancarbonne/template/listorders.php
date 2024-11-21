@@ -100,6 +100,21 @@ print load_fiche_titre($title);
 // Affichage des commandes sous forme de tableau
 print '<table class="noborder" width="100%">';
 
+print '<form method="GET" action="">';
+print '<input type="hidden" name="action" value="list">';
+print '<input type="hidden" name="year" value="' . htmlspecialchars($year) . '">';
+print '<input type="hidden" name="page" value="' . $page . '">';
+print '<label for="limit">Lignes par page :</label>';
+print '<select name="limit" id="limit" onchange="this.form.submit();">';
+print '<option value="10"' . ($limit == 10 ? ' selected' : '') . '>10</option>';
+print '<option value="25"' . ($limit == 25 ? ' selected' : '') . '>25</option>';
+print '<option value="50"' . ($limit == 50 ? ' selected' : '') . '>50</option>';
+print '<option value="100"' . ($limit == 100 ? ' selected' : '') . '>100</option>';
+print '<option value="125"' . ($limit == 125 ? ' selected' : '') . '>125</option>';
+print '</select>';
+print '</form>';
+
+
 // En-tête du tableau
 print '<tr class="liste_titre">';
 print '<th><a href="?action=list&year=' . $year . '&sort=commande_id&order=' . ($sort == 'commande_id' && $order == 'ASC' ? 'DESC' : 'ASC') . '">ID Commande</a></th>';
