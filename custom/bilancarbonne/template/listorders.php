@@ -77,31 +77,7 @@ if (isset($user->socid) && $user->socid > 0) {
 	$socid = $user->socid;
 }
 
-// Security check (enable the most restrictive one)
-//if ($user->socid > 0) accessforbidden();
-//if ($user->socid > 0) $socid = $user->socid;
-//if (!isModEnabled('bilancarbonne')) {
-//	accessforbidden('Module not enabled');
-//}
-//if (! $user->hasRight('bilancarbonne', 'myobject', 'read')) {
-//	accessforbidden();
-//}
-//restrictedArea($user, 'bilancarbonne', 0, 'bilancarbonne_myobject', 'myobject', '', 'rowid');
-//if (empty($user->admin)) {
-//	accessforbidden('Must be admin');
-//}
 
-
-/*
- * Actions
- */
-
-// None
-
-
-/*
- * View
- */
 
 $form = new Form($db);
 $formfile = new FormFile($db);
@@ -109,80 +85,6 @@ $formfile = new FormFile($db);
 llxHeader("", $langs->trans("BilanCarbonneArea"), '', '', 0, 0, '', '', '', 'mod-bilancarbonne page-index');
 
 print load_fiche_titre($langs->trans("BilanCarbonneArea"), '', 'bilancarbonne.png@bilancarbonne');
-
-
-
-
-/* BEGIN MODULEBUILDER DRAFT MYOBJECT
-// Draft MyObject
-if (isModEnabled('bilancarbonne') && $user->hasRight('bilancarbonne', 'read')) {
-	$langs->load("orders");
-
-	$sql = "SELECT c.rowid, c.ref, c.ref_client, c.total_ht, c.tva as total_tva, c.total_ttc, s.rowid as socid, s.nom as name, s.client, s.canvas";
-	$sql.= ", s.code_client";
-	$sql.= " FROM ".MAIN_DB_PREFIX."commande as c";
-	$sql.= ", ".MAIN_DB_PREFIX."societe as s";
-	$sql.= " WHERE c.fk_soc = s.rowid";
-	$sql.= " AND c.fk_statut = 0";
-	$sql.= " AND c.entity IN (".getEntity('commande').")";
-	if ($socid)	$sql.= " AND c.fk_soc = ".((int) $socid);
-
-	$resql = $db->query($sql);
-	if ($resql)
-	{
-		$total = 0;
-		$num = $db->num_rows($resql);
-
-		print '<table class="noborder centpercent">';
-		print '<tr class="liste_titre">';
-		print '<th colspan="3">'.$langs->trans("DraftMyObjects").($num?'<span class="badge marginleftonlyshort">'.$num.'</span>':'').'</th></tr>';
-
-		$var = true;
-		if ($num > 0)
-		{
-			$i = 0;
-			while ($i < $num)
-			{
-
-				$obj = $db->fetch_object($resql);
-				print '<tr class="oddeven"><td class="nowrap">';
-
-				$myobjectstatic->id=$obj->rowid;
-				$myobjectstatic->ref=$obj->ref;
-				$myobjectstatic->ref_client=$obj->ref_client;
-				$myobjectstatic->total_ht = $obj->total_ht;
-				$myobjectstatic->total_tva = $obj->total_tva;
-				$myobjectstatic->total_ttc = $obj->total_ttc;
-
-				print $myobjectstatic->getNomUrl(1);
-				print '</td>';
-				print '<td class="nowrap">';
-				print '</td>';
-				print '<td class="right" class="nowrap">'.price($obj->total_ttc).'</td></tr>';
-				$i++;
-				$total += $obj->total_ttc;
-			}
-			if ($total>0)
-			{
-
-				print '<tr class="liste_total"><td>'.$langs->trans("Total").'</td><td colspan="2" class="right">'.price($total)."</td></tr>";
-			}
-		}
-		else
-		{
-
-			print '<tr class="oddeven"><td colspan="3" class="opacitymedium">'.$langs->trans("NoOrder").'</td></tr>';
-		}
-		print "</table><br>";
-
-		$db->free($resql);
-	}
-	else
-	{
-		dol_print_error($db);
-	}
-}
-END MODULEBUILDER DRAFT MYOBJECT */
 
 
 
@@ -204,9 +106,21 @@ print '<th><a href="?action=list&year=' . $year . '&sort=commande_id&order=' . (
 print '<th><a href="?action=list&year=' . $year . '&sort=product_ref&order=' . ($sort == 'product_ref' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Référence Produit</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=qty&order=' . ($sort == 'qty' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Quantité</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Poids (kg)</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Nom de la société</a></th>';
+print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'nom' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Nom de la société</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Société</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=date_commande&order=' . ($sort == 'date_commande' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Date de Commande</a></th>';
+print '<th>';
+print '<form method="GET" action="">';
+print '<input type="hidden" name="action" value="list">';
+print '<label for="year">Filtrer par année : </label>';
+print '<select name="year" id="year" onchange="this.form.submit();">';
+print '<option value="">Toutes les années</option>'; // Option pour afficher toutes les années
+foreach ($availableYears as $availableYear) {
+	$selected = ($year == $availableYear) ? 'selected' : '';
+	print '<option value="' . $availableYear . '" ' . $selected . '>' . $availableYear . '</option>';
+}
+print '</select>';
+print '</form>';
+print '</th>';
 print '</tr>';
 
 
@@ -218,7 +132,7 @@ foreach ($orders as $order) {
 	print '<td>' . $order->qty . '</td>';
 	print '<td>' . $order->weight . '</td>';
 	print '<td>' . $order->nom . '</td>';
-	print '<td>' . $order->address . " " . $order->town . " " . $order->zip . '</td>';
+	print '<td>' . $order->address . ", " . $order->zip . " " . $order->town . '</td>';
 	print '<td>' . dol_print_date($order->date_commande, 'day') . '</td>';
 	print '</tr>';
 }

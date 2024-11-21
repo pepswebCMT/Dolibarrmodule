@@ -34,6 +34,9 @@ switch ($action) {
 
         // Récupérer toutes les commandes pour l'année donnée
         $allOrders = $orderModel->getOrdersByYear($year, $sort, $order);
+        // Récupérer toutes les années disponibles
+        $availableYears = $orderModel->getAvailableYears();
+
 
         // Calcul de la pagination
         $total_records = count($allOrders);

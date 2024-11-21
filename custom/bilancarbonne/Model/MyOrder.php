@@ -65,4 +65,21 @@ class MyOrderModel
 
         return $orders;
     }
+    public function getAvailableYears()
+    {
+        $sql = "SELECT DISTINCT YEAR(date_commande) AS year FROM " . MAIN_DB_PREFIX . "commande ORDER BY year DESC";
+        $resql = $this->db->query($sql);
+
+        if (!$resql) {
+            dol_print_error($this->db, $sql);
+            return [];
+        }
+
+        $years = [];
+        while ($obj = $this->db->fetch_object($resql)) {
+            $years[] = $obj->year;
+        }
+
+        return $years;
+    }
 }
