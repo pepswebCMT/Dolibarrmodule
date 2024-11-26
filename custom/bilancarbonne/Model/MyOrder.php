@@ -34,7 +34,14 @@ class MyOrderModel
                     s.nom,
                     s.address, 
                     s.zip, 
-                    s.town
+                    s.town,
+                    ps.fk_entrepot AS entrepot_id,
+                    e.ref AS entrepot_ref,
+                    ps.reel AS stock_quantity,
+                    ed.qty AS quantity_expedited,
+    ed.fk_entrepot AS expedition_entrepot_id,
+    ee.ref AS expedition_entrepot_ref
+   
 
                 FROM 
                     " . MAIN_DB_PREFIX . "commande c
@@ -44,12 +51,22 @@ class MyOrderModel
                     " . MAIN_DB_PREFIX . "product p ON cd.fk_product = p.rowid
                 INNER JOIN 
                     " . MAIN_DB_PREFIX . "societe s ON s.rowid = c.fk_soc
+                      LEFT JOIN 
+                    " . MAIN_DB_PREFIX . "product_stock ps ON ps.fk_product = p.rowid
+                LEFT JOIN 
+                    " . MAIN_DB_PREFIX . "entrepot e ON ps.fk_entrepot = e.rowid
+                    LEFT JOIN 
+    " . MAIN_DB_PREFIX . "expeditiondet ed ON ed.fk_origin_line = cd.rowid
+LEFT JOIN 
+    " . MAIN_DB_PREFIX . "entrepot ee ON ed.fk_entrepot = ee.rowid
                WHERE 
                     YEAR(c.date_commande) = " . $this->db->escape($year) . " 
                 AND p.ref NOT LIKE 'frais_de_port%'
                 AND p.ref NOT LIKE '%PrestaShipping%'
                 ORDER BY 
                     $sort $order";
+
+
 
         // Exécution de la requête
         $resql = $this->db->query($sql);

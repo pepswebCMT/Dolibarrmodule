@@ -2,7 +2,8 @@
 require '../../../main.inc.php';
 
 // Inclure le modèle
-require_once '../Model/MyOrder.php';
+
+dol_include_once('/custom/bilancarbonne/Model/MyOrder.php');
 
 // Initialiser le modèle
 $orderModel = new MyOrderModel($db);

@@ -77,6 +77,10 @@ if (isset($user->socid) && $user->socid > 0) {
 	$socid = $user->socid;
 }
 
+if ($user->socid > 0) {
+	accessforbidden();
+}
+
 
 
 $form = new Form($db);
@@ -148,6 +152,7 @@ foreach ($orders as $order) {
 	print '<td>' . $order->weight . '</td>';
 	print '<td>' . $order->nom . '</td>';
 	print '<td>' . $order->address . ", " . $order->zip . " " . $order->town . '</td>';
+	print '<td>' . $order->expedition_entrepot_ref . '</td>';
 	print '<td>' . dol_print_date($order->date_commande, 'day') . '</td>';
 	print '</tr>';
 }
