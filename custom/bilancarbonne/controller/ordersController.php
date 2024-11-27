@@ -1,7 +1,16 @@
 <?php
 require '../../../main.inc.php';
 
-// Inclure le modèle
+// Bloque l'accès aux utilisateurs externes
+if ($user->socid > 0) {
+    accessforbidden();
+}
+
+// Vérification des droits de lecture
+if (! $user->hasRight('bilancarbonne', 'myobject', 'read')) {
+    accessforbidden();
+}
+
 
 dol_include_once('/custom/bilancarbonne/Model/MyOrder.php');
 
@@ -29,6 +38,11 @@ if (!$year) {
 // Vérifier l'action
 switch ($action) {
     case 'list':
+
+        if (! $user->hasRight('bilancarbonne', 'commande', 'read')) {
+            accessforbidden(); // Bloque l'accès si l'utilisateur n'a pas les droits nécessaires
+        }
+
         // Récupérer toutes les commandes pour l'année donnée
         $allOrders = $orderModel->getOrdersByYear($year, $sort, $order);
 

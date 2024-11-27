@@ -292,6 +292,12 @@ class modBilanCarbonne extends DolibarrModules
 		$this->rights[$r][4] = 'myobject';
 		$this->rights[$r][5] = 'delete'; // In php code, permission will be checked by test if ($user->hasRight('bilancarbonne', 'myobject', 'delete'))
 		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", ($o * 10) + 4);
+		$this->rights[$r][1] = 'Voir les commandes'; // Label du droit
+		$this->rights[$r][4] = 'commande';
+		$this->rights[$r][5] = 'read'; // Utilisation : $user->hasRight('bilancarbonne', 'commande', 'read')
+		$r++;
+
 		// */
 		/* END MODULEBUILDER PERMISSIONS */
 

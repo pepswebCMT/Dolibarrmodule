@@ -120,14 +120,17 @@ print '</form>';
 
 
 // En-tête du tableau
+// En-tête du tableau
 print '<tr class="liste_titre">';
 print '<th><a href="?action=list&year=' . $year . '&sort=commande_id&order=' . ($sort == 'commande_id' && $order == 'ASC' ? 'DESC' : 'ASC') . '">ID Commande</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=product_ref&order=' . ($sort == 'product_ref' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Référence Produit</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=qty&order=' . ($sort == 'qty' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Quantité</a></th>';
+print '<th><a href="?action=list&year=' . $year . '&sort=qty&order=' . ($sort == 'qty' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Quantité Commandée</a></th>';
 print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Poids (kg)</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'nom' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Nom de la société</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Société</a></th>';
-print '<th>';
+print '<th><a href="?action=list&year=' . $year . '&sort=fournisseur_name&order=' . ($sort == 'fournisseur_name' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Nom du Fournisseur</a></th>';
+print '<th>Adresse du Fournisseur</th>';
+print '<th>Quantité Expédiée</th>';
+print '<th>Entrepôt d\'Expédition</th>';
+
 print '<form method="GET" action="">';
 print '<input type="hidden" name="action" value="list">';
 print '<label for="year">Filtrer par année : </label>';
@@ -154,6 +157,9 @@ foreach ($orders as $order) {
 	print '<td>' . $order->address . ", " . $order->zip . " " . $order->town . '</td>';
 	print '<td>' . $order->expedition_entrepot_ref . '</td>';
 	print '<td>' . dol_print_date($order->date_commande, 'day') . '</td>';
+	print '<td>' . htmlspecialchars($order->fournisseur_name) . '</td>';
+	print '<td>' . htmlspecialchars($order->fournisseur_address) . ', ' . htmlspecialchars($order->fournisseur_zip) . ' ' . htmlspecialchars($order->fournisseur_town) . '</td>';
+
 	print '</tr>';
 }
 
