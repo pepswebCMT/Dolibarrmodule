@@ -91,9 +91,6 @@ llxHeader("", $langs->trans("BilanCarbonneArea"), '', '', 0, 0, '', '', '', 'mod
 print load_fiche_titre($langs->trans("BilanCarbonneArea"), '', 'bilancarbonne.png@bilancarbonne');
 
 
-
-
-
 $NBMAX = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
 $max = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
 
@@ -119,51 +116,91 @@ print '</select>';
 print '</form>';
 
 
-// En-tête du tableau
-// En-tête du tableau
-print '<tr class="liste_titre">';
-print '<th><a href="?action=list&year=' . $year . '&sort=commande_id&order=' . ($sort == 'commande_id' && $order == 'ASC' ? 'DESC' : 'ASC') . '">ID Commande</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=product_ref&order=' . ($sort == 'product_ref' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Référence Produit</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=qty&order=' . ($sort == 'qty' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Quantité Commandée</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Poids (kg)</a></th>';
-print '<th><a href="?action=list&year=' . $year . '&sort=fournisseur_name&order=' . ($sort == 'fournisseur_name' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Nom du Fournisseur</a></th>';
-print '<th>Adresse du Fournisseur</th>';
-print '<th>Quantité Expédiée</th>';
-print '<th>Entrepôt d\'Expédition</th>';
 
-print '<form method="GET" action="">';
-print '<input type="hidden" name="action" value="list">';
-print '<label for="year">Filtrer par année : </label>';
-print '<select name="year" id="year" onchange="this.form.submit();">';
-print '<option value="">Toutes les années</option>'; // Option pour afficher toutes les années
-foreach ($availableYears as $availableYear) {
-	$selected = ($year == $availableYear) ? 'selected' : '';
-	print '<option value="' . $availableYear . '" ' . $selected . '>' . $availableYear . '</option>';
-}
-print '</select>';
-print '</form>';
-print '</th>';
+print '<table class="noborder" width="100%">';
+print '<tr class="liste_titre">';
+print '<th>ID Commande</th><th>Référence Produit</th><th>Quantité</th><th>Poids (kg)</th>';
+print '<th>Client</th><th>Adresse client</th><th>Adresse fournisseur</th><th>Distance (km)</th>';
 print '</tr>';
 
-
-// Affichage des données des commandes
 foreach ($orders as $order) {
+	$clientAddress = "{$order->address}, {$order->zip} {$order->town}";
+	$supplierAddress = "{$order->fournisseur_address}, {$order->fournisseur_zip} {$order->fournisseur_town}";
+
+	// Calculer la distance
+	$distance = $orderModel->calculateDistance($clientAddress, $supplierAddress);
+
 	print '<tr>';
 	print '<td>' . $order->ref . '</td>';
 	print '<td>' . $order->product_ref . '</td>';
 	print '<td>' . $order->qty . '</td>';
 	print '<td>' . $order->weight . '</td>';
 	print '<td>' . $order->nom . '</td>';
-	print '<td>' . $order->address . ", " . $order->zip . " " . $order->town . '</td>';
-	print '<td>' . $order->expedition_entrepot_ref . '</td>';
-	print '<td>' . dol_print_date($order->date_commande, 'day') . '</td>';
-	print '<td>' . htmlspecialchars($order->fournisseur_name) . '</td>';
-	print '<td>' . htmlspecialchars($order->fournisseur_address) . ', ' . htmlspecialchars($order->fournisseur_zip) . ' ' . htmlspecialchars($order->fournisseur_town) . '</td>';
-
+	print '<td>' . $clientAddress . '</td>';
+	print '<td>' . $supplierAddress . '</td>';
+	print '<td>' . ($distance ? round($distance, 2) . ' km' : 'Distance non calculée') . '</td>';
 	print '</tr>';
 }
 
-print '</table>';
+// // En-tête du tableau
+// print '<tr class="liste_titre">';
+// print '<th><a href="?action=list&year=' . $year . '&sort=commande_id&order=' . ($sort == 'commande_id' && $order == 'ASC' ? 'DESC' : 'ASC') . '">ID Commande</a></th>';
+// print '<th><a href="?action=list&year=' . $year . '&sort=product_ref&order=' . ($sort == 'product_ref' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Référence Produit</a></th>';
+// print '<th><a href="?action=list&year=' . $year . '&sort=qty&order=' . ($sort == 'qty' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Quantité Commandée</a></th>';
+// print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Poids (kg)</a></th>';
+// print '<th><a href="?action=list&year=' . $year . '&sort=fournisseur_name&order=' . ($sort == 'fournisseur_name' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Client</a></th>';
+// print '<th>Adresse client</th>';
+// print '<th>Entrepôt d\'Expédition</th>';
+// print '<th>Date</th>';
+// print '<th>Fournisseur</th>';
+// print '<th>Adresse fournisseur</th>';
+// print '<th>Distance parcouru par le produit</th>';
+
+
+// print '<form method="GET" action="">';
+// print '<input type="hidden" name="action" value="list">';
+// print '<label for="year">Filtrer par année : </label>';
+// print '<select name="year" id="year" onchange="this.form.submit();">';
+// print '<option value="">Toutes les années</option>'; // Option pour afficher toutes les années
+// foreach ($availableYears as $availableYear) {
+// 	$selected = ($year == $availableYear) ? 'selected' : '';
+// 	print '<option value="' . $availableYear . '" ' . $selected . '>' . $availableYear . '</option>';
+// }
+// print '</select>';
+// print '</form>';
+// print '</th>';
+// print '</tr>';
+
+
+// print '<table class="noborder" width="100%">';
+// print '<tr class="liste_titre">';
+// print '<th>ID Commande</th>';
+// print '<th>Référence Produit</th>';
+// print '<th>Quantité</th>';
+// print '<th>Poids (kg)</th>';
+// print '<th>Client</th>';
+// print '<th>Adresse client</th>';
+// print '<th>Adresse fournisseur</th>';
+// print '<th>Distance (km)</th>';
+// print '</tr>';
+
+// // Parcourez les commandes et affichez leurs données
+// foreach ($orders as $order) {
+// 	print '<tr>';
+// 	print '<td>' . htmlspecialchars($order->commande_id) . '</td>';
+// 	print '<td>' . htmlspecialchars($order->commande_ref) . '</td>';
+// 	print '<td>' . htmlspecialchars($order->qty) . '</td>';
+// 	print '<td>' . htmlspecialchars($order->weight) . '</td>';
+// 	print '<td>' . htmlspecialchars($order->client_name) . '</td>';
+// 	print '<td>' . htmlspecialchars($order->client_address) . ', ' . htmlspecialchars($order->client_zip) . ' ' . htmlspecialchars($order->client_town) . '</td>';
+// 	print '<td>' . htmlspecialchars($order->supplier_address) . ', ' . htmlspecialchars($order->supplier_zip) . ' ' . htmlspecialchars($order->supplier_town) . '</td>';
+// 	print '<td>' . ($order->distance_km !== null ? $order->distance_km . ' km' : 'Distance non calculée') . '</td>';
+// 	print '</tr>';
+// }
+
+
+
+// print '</table>';
 print 'Page: ' . $page . '<br>';
 print 'Year: ' . $year . '<br>';
 print 'Offset: ' . $offset . '<br>';
