@@ -26,109 +26,252 @@
  */
 
 // Load Dolibarr environment
-$res = 0;
-// Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
-}
-// Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
-$tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
-$tmp2 = realpath(__FILE__);
-$i = strlen($tmp) - 1;
-$j = strlen($tmp2) - 1;
-while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-	$i--;
-	$j--;
-}
-if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1)) . "/main.inc.php")) {
-	$res = require_once substr($tmp, 0, ($i + 1)) . "/main.inc.php";
-}
-if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php")) {
-	$res = require_once dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php";
-}
-// Try main.inc.php using relative path
-if (!$res && file_exists("../main.inc.php")) {
-	$res = require_once "../main.inc.php";
-}
-if (!$res && file_exists("../../main.inc.php")) {
-	$res = require_once "../../main.inc.php";
-}
-if (!$res && file_exists("../../../main.inc.php")) {
-	$res = require_once "../../../main.inc.php";
-}
-if (!$res) {
-	die("Include of main fails");
-}
+// $res = 0;
+// // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
+// if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
+// 	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
+// }
+// // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
+// $tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
+// $tmp2 = realpath(__FILE__);
+// $i = strlen($tmp) - 1;
+// $j = strlen($tmp2) - 1;
+// while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
+// 	$i--;
+// 	$j--;
+// }
+// if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1)) . "/main.inc.php")) {
+// 	$res = require_once substr($tmp, 0, ($i + 1)) . "/main.inc.php";
+// }
+// if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php")) {
+// 	$res = require_once dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php";
+// }
+// // Try main.inc.php using relative path
+// if (!$res && file_exists("../main.inc.php")) {
+// 	$res = require_once "../main.inc.php";
+// }
+// if (!$res && file_exists("../../main.inc.php")) {
+// 	$res = require_once "../../main.inc.php";
+// }
+// if (!$res && file_exists("../../../main.inc.php")) {
+// 	$res = require_once "../../../main.inc.php";
+// }
+// if (!$res) {
+// 	die("Include of main fails");
+// }
 
-require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
+// require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
 
-// Load translation files required by the page
-$langs->loadLangs(array("bilancarbonne@bilancarbonne"));
+// // Load translation files required by the page
+// $langs->loadLangs(array("bilancarbonne@bilancarbonne"));
 
-$action = GETPOST('action', 'aZ09');
+// $action = GETPOST('action', 'aZ09');
 
-$max = 5;
-$now = dol_now();
+// $max = 5;
+// $now = dol_now();
 
-// Security check - Protection if external user
-$socid = GETPOST('socid', 'int');
-if (isset($user->socid) && $user->socid > 0) {
-	$action = '';
-	$socid = $user->socid;
-}
+// // Security check - Protection if external user
+// $socid = GETPOST('socid', 'int');
+// if (isset($user->socid) && $user->socid > 0) {
+// 	$action = '';
+// 	$socid = $user->socid;
+// }
 
-if ($user->socid > 0) {
-	accessforbidden();
-}
-
-
-
-$form = new Form($db);
-$formfile = new FormFile($db);
-
-llxHeader("", $langs->trans("BilanCarbonneArea"), '', '', 0, 0, '', '', '', 'mod-bilancarbonne page-index');
-
-print load_fiche_titre($langs->trans("BilanCarbonneArea"), '', 'bilancarbonne.png@bilancarbonne');
-
-
-$NBMAX = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
-$max = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
-
-// Titre de la page
-$title = "Liste des commandes avec détails produits";
-print load_fiche_titre($title);
-
-// Affichage des commandes sous forme de tableau
-print '<table class="noborder" width="100%">';
-
-print '<form method="GET" action="">';
-print '<input type="hidden" name="action" value="list">';
-print '<input type="hidden" name="year" value="' . htmlspecialchars($year) . '">';
-print '<input type="hidden" name="page" value="' . $page . '">';
-print '<label for="limit">Lignes par page :</label>';
-print '<select name="limit" id="limit" onchange="this.form.submit();">';
-print '<option value="10"' . ($limit == 10 ? ' selected' : '') . '>10</option>';
-print '<option value="25"' . ($limit == 25 ? ' selected' : '') . '>25</option>';
-print '<option value="50"' . ($limit == 50 ? ' selected' : '') . '>50</option>';
-print '<option value="100"' . ($limit == 100 ? ' selected' : '') . '>100</option>';
-print '<option value="125"' . ($limit == 125 ? ' selected' : '') . '>125</option>';
-print '</select>';
-print '</form>';
+// if ($user->socid > 0) {
+// 	accessforbidden();
+// }
 
 
 
+// $form = new Form($db);
+// $formfile = new FormFile($db);
+
+// llxHeader("", $langs->trans("BilanCarbonneArea"), '', '', 0, 0, '', '', '', 'mod-bilancarbonne page-index');
+
+// print load_fiche_titre($langs->trans("BilanCarbonneArea"), '', 'bilancarbonne.png@bilancarbonne');
+
+
+// $NBMAX = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
+// $max = getDolGlobalInt('MAIN_SIZE_SHORTLIST_LIMIT');
+
+// // Titre de la page
+// $title = "Liste des commandes avec détails produits";
+// print load_fiche_titre($title);
+
+// // Affichage des commandes sous forme de tableau
+// print '<table class="noborder" width="100%">';
+
+// print '<form method="GET" action="">';
+// print '<input type="hidden" name="action" value="list">';
+// print '<input type="hidden" name="year" value="' . htmlspecialchars($year) . '">';
+// print '<input type="hidden" name="page" value="' . $page . '">';
+// print '<label for="limit">Lignes par page :</label>';
+// print '<select name="limit" id="limit" onchange="this.form.submit();">';
+// print '<option value="10"' . ($limit == 10 ? ' selected' : '') . '>10</option>';
+// print '<option value="25"' . ($limit == 25 ? ' selected' : '') . '>25</option>';
+// print '<option value="50"' . ($limit == 50 ? ' selected' : '') . '>50</option>';
+// print '<option value="100"' . ($limit == 100 ? ' selected' : '') . '>100</option>';
+// print '<option value="125"' . ($limit == 125 ? ' selected' : '') . '>125</option>';
+// print '</select>';
+// print '</form>';
+
+
+
+// print '<table class="noborder" width="100%">';
+// print '<tr class="liste_titre">';
+// print '<th>ID Commande</th><th>Référence Produit</th><th>Quantité</th><th>Poids (kg)</th>';
+// print '<th>Client</th><th>Adresse client</th><th>Adresse fournisseur</th><th>Distance (km)</th>';
+// print '</tr>';
+
+// foreach ($orders as $order) {
+// 	$clientAddress = "{$order->address}, {$order->zip} {$order->town}";
+// 	$supplierAddress = "{$order->fournisseur_address}, {$order->fournisseur_zip} {$order->fournisseur_town}";
+
+// 	// Calculer la distance
+// 	$distance = $orderModel->calculateDistance($clientAddress, $supplierAddress);
+
+// 	print '<tr>';
+// 	print '<td>' . $order->ref . '</td>';
+// 	print '<td>' . $order->product_ref . '</td>';
+// 	print '<td>' . $order->qty . '</td>';
+// 	print '<td>' . $order->weight . '</td>';
+// 	print '<td>' . $order->nom . '</td>';
+// 	print '<td>' . $clientAddress . '</td>';
+// 	print '<td>' . $supplierAddress . '</td>';
+// 	print '<td>' . ($distance ? round($distance, 2) . ' km' : 'Distance non calculée') . '</td>';
+// 	print '</tr>';
+// }
+
+
+// print 'Page: ' . $page . '<br>';
+// print 'Year: ' . $year . '<br>';
+// print 'Offset: ' . $offset . '<br>';
+// print 'Total Pages: ' . $total_pages . '<br>';
+
+
+// // Pagination
+// print '<div class="pagination">';
+// // Formulaire pour la page précédente
+// if ($page > 0) {
+// 	print '<form method="POST" action="" style="display: inline;">';
+// 	print '<input type="hidden" name="action" value="list">';
+// 	print '<input type="hidden" name="page" value="' . ($page - 1) . '">';
+// 	print '<button type="submit">&laquo; Précédent</button>';
+// 	print '</form>';
+// }
+
+// // Affichage de la page actuelle
+// print '<span>Page ' . ($page + 1) . ' / ' . $total_pages . '</span>';
+
+// // Formulaire pour la page suivante
+// if ($page < $total_pages - 1) {
+// 	print '<form method="POST" action="" style="display: inline;">';
+// 	print '<input type="hidden" name="action" value="list">';
+// 	print '<input type="hidden" name="page" value="' . ($page + 1) . '">';
+// 	print '<button type="submit">Suivant &raquo;</button>';
+// 	print '</form>';
+// }
+
+// print '</div>';
+// print '</div>';
+
+
+// llxFooter();
+
+// template/listorders.php
+llxHeader('', $langs->trans("OrdersList"));
+
+print load_fiche_titre($langs->trans("OrdersList"));
+?>
+<script type="text/javascript">
+	function calculateDistance(orderId, clientAddress, supplierAddress, rowIndex) {
+		console.log('Calculating distance for:', {
+			orderId,
+			clientAddress,
+			supplierAddress,
+			rowIndex
+		});
+
+		fetch('ordersController.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams({
+					'action': 'calculate_distance',
+					'order_id': orderId,
+					'client_address': clientAddress,
+					'supplier_address': supplierAddress
+				})
+			})
+			.then(response => {
+				console.log('Response status:', response.status);
+				return response.json();
+			})
+			.then(data => {
+				console.log('Response data:', data);
+
+				// Utiliser l'ID unique avec rowIndex
+				const distanceCell = document.getElementById(`distance_${orderId}_${rowIndex}`);
+				if (data.distance) {
+					distanceCell.textContent = `${data.distance} km`;
+				} else {
+					distanceCell.textContent = 'Distance non calculée';
+				}
+				distanceCell.classList.remove('calculating');
+			})
+			.catch(error => {
+				console.error('Erreur:', error);
+				const distanceCell = document.getElementById(`distance_${orderId}_${rowIndex}`);
+				distanceCell.textContent = 'Erreur de calcul';
+				distanceCell.classList.remove('calculating');
+			});
+	}
+
+	function processDistanceCalculations() {
+		const orders = document.querySelectorAll('[data-needs-calculation="true"]');
+		let index = 0;
+
+		function calculateNext() {
+			if (index < orders.length) {
+				const order = orders[index];
+				calculateDistance(
+					order.dataset.orderId,
+					order.dataset.clientAddress,
+					order.dataset.supplierAddress,
+					order.dataset.rowIndex
+				);
+				index++;
+				setTimeout(calculateNext, 1000);
+			}
+		}
+		calculateNext();
+	}
+</script>
+
+<style>
+	.calculating {
+		position: relative;
+	}
+
+	.calculating:after {
+		content: 'Calcul en cours...';
+		font-style: italic;
+		color: #666;
+	}
+</style>
+
+<?php
 print '<table class="noborder" width="100%">';
 print '<tr class="liste_titre">';
 print '<th>ID Commande</th><th>Référence Produit</th><th>Quantité</th><th>Poids (kg)</th>';
 print '<th>Client</th><th>Adresse client</th><th>Adresse fournisseur</th><th>Distance (km)</th>';
 print '</tr>';
 
+$rowIndex = 0;  // Ajout d'un compteur pour créer des IDs uniques
 foreach ($orders as $order) {
 	$clientAddress = "{$order->address}, {$order->zip} {$order->town}";
 	$supplierAddress = "{$order->fournisseur_address}, {$order->fournisseur_zip} {$order->fournisseur_town}";
-
-	// Calculer la distance
-	$distance = $orderModel->calculateDistance($clientAddress, $supplierAddress);
 
 	print '<tr>';
 	print '<td>' . $order->ref . '</td>';
@@ -138,100 +281,22 @@ foreach ($orders as $order) {
 	print '<td>' . $order->nom . '</td>';
 	print '<td>' . $clientAddress . '</td>';
 	print '<td>' . $supplierAddress . '</td>';
-	print '<td>' . ($distance ? round($distance, 2) . ' km' : 'Distance non calculée') . '</td>';
+	// Utiliser un id unique avec rowIndex
+	print '<td id="distance_' . $order->rowid . '_' . $rowIndex . '" class="calculating" 
+        data-needs-calculation="true"
+        data-order-id="' . $order->rowid . '"
+        data-client-address="' . htmlspecialchars($clientAddress) . '"
+        data-supplier-address="' . htmlspecialchars($supplierAddress) . '"
+        data-row-index="' . $rowIndex . '">
+     
+    </td>';
 	print '</tr>';
+
+	$rowIndex++;  // Incrémenter le compteur
 }
 
-// // En-tête du tableau
-// print '<tr class="liste_titre">';
-// print '<th><a href="?action=list&year=' . $year . '&sort=commande_id&order=' . ($sort == 'commande_id' && $order == 'ASC' ? 'DESC' : 'ASC') . '">ID Commande</a></th>';
-// print '<th><a href="?action=list&year=' . $year . '&sort=product_ref&order=' . ($sort == 'product_ref' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Référence Produit</a></th>';
-// print '<th><a href="?action=list&year=' . $year . '&sort=qty&order=' . ($sort == 'qty' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Quantité Commandée</a></th>';
-// print '<th><a href="?action=list&year=' . $year . '&sort=weight&order=' . ($sort == 'weight' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Poids (kg)</a></th>';
-// print '<th><a href="?action=list&year=' . $year . '&sort=fournisseur_name&order=' . ($sort == 'fournisseur_name' && $order == 'ASC' ? 'DESC' : 'ASC') . '">Client</a></th>';
-// print '<th>Adresse client</th>';
-// print '<th>Entrepôt d\'Expédition</th>';
-// print '<th>Date</th>';
-// print '<th>Fournisseur</th>';
-// print '<th>Adresse fournisseur</th>';
-// print '<th>Distance parcouru par le produit</th>';
+print '</table>';
 
-
-// print '<form method="GET" action="">';
-// print '<input type="hidden" name="action" value="list">';
-// print '<label for="year">Filtrer par année : </label>';
-// print '<select name="year" id="year" onchange="this.form.submit();">';
-// print '<option value="">Toutes les années</option>'; // Option pour afficher toutes les années
-// foreach ($availableYears as $availableYear) {
-// 	$selected = ($year == $availableYear) ? 'selected' : '';
-// 	print '<option value="' . $availableYear . '" ' . $selected . '>' . $availableYear . '</option>';
-// }
-// print '</select>';
-// print '</form>';
-// print '</th>';
-// print '</tr>';
-
-
-// print '<table class="noborder" width="100%">';
-// print '<tr class="liste_titre">';
-// print '<th>ID Commande</th>';
-// print '<th>Référence Produit</th>';
-// print '<th>Quantité</th>';
-// print '<th>Poids (kg)</th>';
-// print '<th>Client</th>';
-// print '<th>Adresse client</th>';
-// print '<th>Adresse fournisseur</th>';
-// print '<th>Distance (km)</th>';
-// print '</tr>';
-
-// // Parcourez les commandes et affichez leurs données
-// foreach ($orders as $order) {
-// 	print '<tr>';
-// 	print '<td>' . htmlspecialchars($order->commande_id) . '</td>';
-// 	print '<td>' . htmlspecialchars($order->commande_ref) . '</td>';
-// 	print '<td>' . htmlspecialchars($order->qty) . '</td>';
-// 	print '<td>' . htmlspecialchars($order->weight) . '</td>';
-// 	print '<td>' . htmlspecialchars($order->client_name) . '</td>';
-// 	print '<td>' . htmlspecialchars($order->client_address) . ', ' . htmlspecialchars($order->client_zip) . ' ' . htmlspecialchars($order->client_town) . '</td>';
-// 	print '<td>' . htmlspecialchars($order->supplier_address) . ', ' . htmlspecialchars($order->supplier_zip) . ' ' . htmlspecialchars($order->supplier_town) . '</td>';
-// 	print '<td>' . ($order->distance_km !== null ? $order->distance_km . ' km' : 'Distance non calculée') . '</td>';
-// 	print '</tr>';
-// }
-
-
-
-// print '</table>';
-print 'Page: ' . $page . '<br>';
-print 'Year: ' . $year . '<br>';
-print 'Offset: ' . $offset . '<br>';
-print 'Total Pages: ' . $total_pages . '<br>';
-
-
-// Pagination
-print '<div class="pagination">';
-// Formulaire pour la page précédente
-if ($page > 0) {
-	print '<form method="POST" action="" style="display: inline;">';
-	print '<input type="hidden" name="action" value="list">';
-	print '<input type="hidden" name="page" value="' . ($page - 1) . '">';
-	print '<button type="submit">&laquo; Précédent</button>';
-	print '</form>';
-}
-
-// Affichage de la page actuelle
-print '<span>Page ' . ($page + 1) . ' / ' . $total_pages . '</span>';
-
-// Formulaire pour la page suivante
-if ($page < $total_pages - 1) {
-	print '<form method="POST" action="" style="display: inline;">';
-	print '<input type="hidden" name="action" value="list">';
-	print '<input type="hidden" name="page" value="' . ($page + 1) . '">';
-	print '<button type="submit">Suivant &raquo;</button>';
-	print '</form>';
-}
-
-print '</div>';
-print '</div>';
-
+print '<script>document.addEventListener("DOMContentLoaded", processDistanceCalculations);</script>';
 
 llxFooter();
