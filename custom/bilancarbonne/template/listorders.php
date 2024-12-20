@@ -206,11 +206,13 @@ print load_fiche_titre($langs->trans("OrdersList"));
 			})
 			.then(response => {
 				console.log('Response status:', response.status);
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
 				return response.json();
 			})
 			.then(data => {
 				console.log('Response data:', data);
-
 				// Utiliser l'ID unique avec rowIndex
 				const distanceCell = document.getElementById(`distance_${orderId}_${rowIndex}`);
 				if (data.distance) {
@@ -225,6 +227,8 @@ print load_fiche_titre($langs->trans("OrdersList"));
 				const distanceCell = document.getElementById(`distance_${orderId}_${rowIndex}`);
 				distanceCell.textContent = 'Erreur de calcul';
 				distanceCell.classList.remove('calculating');
+
+
 			});
 	}
 
@@ -268,7 +272,7 @@ print '<th>ID Commande</th><th>Référence Produit</th><th>Quantité</th><th>Poi
 print '<th>Client</th><th>Adresse client</th><th>Adresse fournisseur</th><th>Distance (km)</th>';
 print '</tr>';
 
-$rowIndex = 0;  // Ajout d'un compteur pour créer des IDs uniques
+$rowIndex = 0;
 foreach ($orders as $order) {
 	$clientAddress = "{$order->address}, {$order->zip} {$order->town}";
 	$supplierAddress = "{$order->fournisseur_address}, {$order->fournisseur_zip} {$order->fournisseur_town}";
@@ -292,7 +296,7 @@ foreach ($orders as $order) {
     </td>';
 	print '</tr>';
 
-	$rowIndex++;  // Incrémenter le compteur
+	$rowIndex++;
 }
 
 print '</table>';
