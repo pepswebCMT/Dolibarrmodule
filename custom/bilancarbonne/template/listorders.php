@@ -179,6 +179,7 @@
 // llxFooter();
 
 // template/listorders.php
+
 llxHeader('', $langs->trans("OrdersList"));
 
 print load_fiche_titre($langs->trans("OrdersList"));

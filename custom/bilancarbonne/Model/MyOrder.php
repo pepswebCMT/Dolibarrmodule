@@ -91,22 +91,25 @@ class MyOrderModel
         return $orders;
     }
 
-    // Fonction pour calculer la distance entre deux adresses
     public function calculateDistance($clientAddress, $supplierAddress)
     {
         $apiKey = 'ksiu53cxlv9SAHTk4g9xULyC9rh0EdUNGFaaZyJaDRYp9lqBNGc4KTrHe7QMcX7c';
 
-        // Géocodage des adresses
         $clientCoords = $this->geocodeAddress($clientAddress, $apiKey);
         $supplierCoords = $this->geocodeAddress($supplierAddress, $apiKey);
 
         if (!$clientCoords || !$supplierCoords) {
-            return null; // Impossible de calculer la distance
+            return [
+                'distance' => null,
+                'error' => 'Coordonnées manquantes',
+                'clientCoords' => $clientCoords,
+                'supplierCoords' => $supplierCoords,
+                'supplierAddress' => $supplierAddress
+            ];
         }
 
-        // Appel à l'API de routage
-        $routingUrl = "https://api.jawg.io/routing/route/v1/car/{$clientCoords[0]},{$clientCoords[1]};{$supplierCoords[0]},{$supplierCoords[1]}?overview=false&access-token={$apiKey}";
 
+        $routingUrl = "https://api.jawg.io/routing/route/v1/car/{$clientCoords[0]},{$clientCoords[1]};{$supplierCoords[0]},{$supplierCoords[1]}?overview=false&access-token={$apiKey}";
         $options = [
             'http' => [
                 'method' => 'GET',
@@ -119,13 +122,20 @@ class MyOrderModel
         $routingData = json_decode($response, true);
 
         if (!empty($routingData['routes'][0]['distance'])) {
-            return $routingData['routes'][0]['distance'] / 1000; // Distance en kilomètres
+            return [
+                'distance' => $routingData['routes'][0]['distance'] / 1000
+            ];
         }
 
-        return null;
+        return [
+            'distance' => null,
+            'error' => 'Erreur API de routage',
+            'routingData' => $routingData
+        ];
     }
 
-    // Fonction pour géocoder une adresse
+
+
     private function geocodeAddress($address, $apiKey)
     {
         $encodedAddress = urlencode($address);
@@ -142,10 +152,17 @@ class MyOrderModel
         $response = file_get_contents($url, false, $context);
         $data = json_decode($response, true);
 
+        // Ajoutez des logs pour le débogage
         if (!empty($data['features'][0]['geometry']['coordinates'])) {
             return $data['features'][0]['geometry']['coordinates']; // [longitude, latitude]
         }
 
-        return null;
+        return [
+            'error' => 'Erreur géocodage',
+            'address' => $address,
+            'url' => $url,
+            'response' => $response,
+            'data' => $data
+        ];
     }
 }

@@ -40,7 +40,12 @@
 
 // listorders.php
 require '../../../main.inc.php';
+
 dol_include_once('/custom/bilancarbonne/Model/MyOrder.php');
+
+
+require_once DOL_DOCUMENT_ROOT . '/core/class/html.form.class.php';
+require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
 
 if ($user->socid > 0 || !$user->hasRight('bilancarbonne', 'myobject', 'read') || !$user->hasRight('bilancarbonne', 'commande', 'read')) {
     accessforbidden();
@@ -53,21 +58,20 @@ $page = GETPOST('page', 'int') ?: 0;
 $limit = GETPOST('limit', 'int') ?: 25;
 $offset = $page * $limit;
 
-// Endpoint pour le calcul de distance Ajax
 if ($action === 'calculate_distance') {
     $clientAddress = GETPOST('client_address', 'alpha');
     $supplierAddress = GETPOST('supplier_address', 'alpha');
     $orderId = GETPOST('order_id', 'int');
 
-    $distance = $orderModel->calculateDistance($clientAddress, $supplierAddress);
+    $result = $orderModel->calculateDistance($clientAddress, $supplierAddress);
 
-    // Mettre à jour la distance en base de données
-    if ($distance !== null) {
-        $sql = "UPDATE " . MAIN_DB_PREFIX . "commande SET distance_km = " . $distance . " WHERE rowid = " . $orderId;
+    // Mise à jour en base de données si distance est calculée
+    if (!empty($result['distance'])) {
+        $sql = "UPDATE " . MAIN_DB_PREFIX . "commande SET distance_km = " . $result['distance'] . " WHERE rowid = " . $orderId;
         $db->query($sql);
     }
 
-    echo json_encode(['distance' => $distance ? round($distance, 2) : null]);
+    echo json_encode($result);
     exit;
 }
 
