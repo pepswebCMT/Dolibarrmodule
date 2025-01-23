@@ -69,12 +69,14 @@ class MyOrderModel
     LEFT JOIN 
         " . MAIN_DB_PREFIX . "societe sf ON sf.rowid = pf.fk_soc
    WHERE 
-        YEAR(c.date_commande) = " . $this->db->escape($year) . " 
+ 
+   YEAR(c.date_commande) = 2024
     AND p.ref NOT LIKE 'frais_de_port%'
     AND p.ref NOT LIKE '%PrestaShipping%'
     ORDER BY 
         $sort $order
         LIMIT $limit OFFSET $offset";
+
 
         // Exécution de la requête
         $resql = $this->db->query($sql);
@@ -88,8 +90,10 @@ class MyOrderModel
             $orders[] = $obj;
         }
 
+
         return $orders;
     }
+
 
     public function calculateDistance($clientAddress, $supplierAddress)
     {
@@ -154,7 +158,7 @@ class MyOrderModel
 
         // Ajoutez des logs pour le débogage
         if (!empty($data['features'][0]['geometry']['coordinates'])) {
-            return $data['features'][0]['geometry']['coordinates']; // [longitude, latitude]
+            return $data['features'][0]['geometry']['coordinates'];
         }
 
         return [
