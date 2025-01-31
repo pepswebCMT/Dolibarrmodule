@@ -252,7 +252,7 @@ class MyOrderModel
             " . $sort . " " . $order . "
         LIMIT " . $limit . " OFFSET " . $offset;
 
-        error_log("SQL Debug - Recherche dans cache : " . $sql);
+        // error_log("SQL Debug - Recherche dans cache : " . $sql);
 
 
         $result = $this->db->query($sql);
@@ -283,10 +283,10 @@ class MyOrderModel
         $apiKey = 'NpDmJrHBrbbRpQMavTD4JqAdPcWArSgoolEdaQ9Z9W2dSv4l8OG9Ir4AjwHb9Z0V';
 
 
-        error_log("Début du calcul de distance");
-        error_log("Adresse client: " . $clientAddress);
-        error_log("Adresse transit: " . $transitAddress);
-        error_log("Adresse fournisseur: " . $supplierAddress);
+        // error_log("Début du calcul de distance");
+        // error_log("Adresse client: " . $clientAddress);
+        // error_log("Adresse transit: " . $transitAddress);
+        // error_log("Adresse fournisseur: " . $supplierAddress);
 
         $clientCoords = $this->geocodeAddress($clientAddress, $apiKey);
         $addressToRouteCoords = $this->geocodeAddress($supplierAddress, $apiKey);
@@ -332,11 +332,11 @@ class MyOrderModel
 
 
             $routingUrl = "https://api.jawg.io/routing/route/v1/car/{$clientCoords[0]},{$clientCoords[1]};{$transitCoords[0]},{$transitCoords[1]};{$supplierCoords[0]},{$supplierCoords[1]}?overview=false&access-token={$apiKey}";
-            error_log("Coordinates: 
-                Client Address: {$clientAddress},
-    Client: {$clientCoords[0]}, {$clientCoords[1]}
-    Transit: {$transitCoords[0]}, {$transitCoords[1]} 
-    Supplier: {$supplierCoords[0]}, {$supplierCoords[1]}");
+            //         error_log("Coordinates: 
+            //             Client Address: {$clientAddress},
+            // Client: {$clientCoords[0]}, {$clientCoords[1]}
+            // Transit: {$transitCoords[0]}, {$transitCoords[1]} 
+            // Supplier: {$supplierCoords[0]}, {$supplierCoords[1]}");
         }
 
         $options = [
@@ -405,7 +405,7 @@ class MyOrderModel
         $resql = $this->db->query($sql);
         if ($resql) {
             $obj = $this->db->fetch_object($resql);
-            error_log("Poids total pour la commande $orderId : " . ($obj->total_weight ?: "Valeur par défaut 1"));
+            // error_log("Poids total pour la commande $orderId : " . ($obj->total_weight ?: "Valeur par défaut 1"));
             return $obj && $obj->total_weight > 0 ? $obj->total_weight : 1; // Valeur par défaut
         }
 
@@ -415,7 +415,7 @@ class MyOrderModel
 
     public function storeDistance($clientAddress, $supplierAddress, $transitAddress, $distance, $co2)
     {
-        error_log("Stockage distance : client={$clientAddress}, supplier={$supplierAddress}, transit={$transitAddress}, distance={$distance}, co2={$co2}");
+        // error_log("Stockage distance : client={$clientAddress}, supplier={$supplierAddress}, transit={$transitAddress}, distance={$distance}, co2={$co2},  ");
         $sql = "INSERT INTO " . MAIN_DB_PREFIX . "distance_cache 
             (client_address, supplier_address, transit_address, distance, co2, date_creation) 
             VALUES (
@@ -424,6 +424,7 @@ class MyOrderModel
                 '" . $this->db->escape($transitAddress) . "', 
                 " . floatval($distance) . ", 
                 " . floatval($co2) . ", 
+          
                 NOW()
             ) 
             ON DUPLICATE KEY UPDATE 
@@ -480,5 +481,43 @@ class MyOrderModel
         }
 
         return null;
+    }
+
+    public function getEmissionFactor()
+    {
+        $sql = "SELECT emission_factor FROM " . MAIN_DB_PREFIX . "distance_cache ORDER BY date_creation DESC LIMIT 1";
+        $resql = $this->db->query($sql);
+
+        if ($resql) {
+            $obj = $this->db->fetch_object($resql);
+            return $obj ? $obj->emission_factor : 80.8;
+        }
+
+        return 80.8; // Valeur par défaut en cas d'erreur
+    }
+
+    public function updateEmissionFactor($newFactor)
+    {
+        $sql = "UPDATE " . MAIN_DB_PREFIX . "distance_cache SET emission_factor = " . floatval($newFactor);
+        return $this->db->query($sql);
+    }
+
+    public function getOrdersWithChangedWeight()
+    {
+        $sql = "SELECT c.rowid
+            FROM " . MAIN_DB_PREFIX . "commande c
+            JOIN " . MAIN_DB_PREFIX . "distance_cache dc 
+                ON UPPER(TRIM(dc.client_address)) = UPPER(TRIM(CONCAT(c.address, ', ', c.zip, ' ', c.town))) 
+                AND UPPER(TRIM(dc.supplier_address)) = UPPER(TRIM(CONCAT(c.fournisseur_address, ', ', c.fournisseur_zip, ' ', c.fournisseur_town))) 
+            WHERE c.total_weight != dc.last_weight";
+
+        $resql = $this->db->query($sql);
+        $orders = [];
+
+        while ($obj = $this->db->fetch_object($resql)) {
+            $orders[] = $obj->rowid;
+        }
+
+        return $orders;
     }
 }
