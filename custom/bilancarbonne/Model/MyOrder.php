@@ -8,171 +8,6 @@ class MyOrderModel
         $this->db = $db;
     }
 
-    // Fonction pour récupérer les commandes par année
-    //     public function getOrdersByYear($year, $sort = 'date_commande', $order = 'ASC', $limit = 25, $offset = 0)
-    //     {
-    //         $allowedSortFields = ['commande_id', 'product_ref', 'qty', 'weight', 'date_commande'];
-    //         $allowedOrder = ['ASC', 'DESC'];
-
-    //         // Validation stricte des paramètres
-    //         if (!in_array($sort, $allowedSortFields)) {
-    //             $sort = 'date_commande';
-    //         }
-    //         if (!in_array($order, $allowedOrder)) {
-    //             $order = 'ASC';
-    //         }
-
-    //         // Construction de la requête SQL avec échappement pour $year
-    //         $sql = "SELECT 
-    //         c.rowid,
-    //         c.ref,
-    //         c.date_commande,
-    //         cd.fk_product,
-    //         cd.qty,
-    //         p.weight,
-    //         p.ref AS product_ref,
-    //         s.rowid, 
-    //         s.nom,
-    //         s.address, 
-    //         s.zip, 
-    //         s.town,
-    //         ps.fk_entrepot AS entrepot_id,
-    //         e.ref AS entrepot_ref,
-    //         ps.reel AS stock_quantity,
-    //         ed.fk_entrepot AS expedition_entrepot_id,
-    //         ee.ref AS expedition_entrepot_ref,
-    //         CASE 
-    //             WHEN ee.ref = 'STOCK-ACTILEV-GAILLON' THEN 'Route de la Garenne, 27600 Gaillon'
-    //             WHEN ee.ref = 'STOCK-DEPOT' THEN 'Châteaubernard, 16100'
-    //             ELSE NULL
-    //         END AS transit_address,
-    //         sf.rowid AS fournisseur_id,
-    //         sf.nom AS fournisseur_name,
-    //         sf.address AS fournisseur_address,
-    //         sf.zip AS fournisseur_zip,
-    //         sf.town AS fournisseur_town
-
-
-    //     FROM 
-    //         " . MAIN_DB_PREFIX . "commande c
-    //     INNER JOIN 
-    //         " . MAIN_DB_PREFIX . "commandedet cd ON c.rowid = cd.fk_commande
-    //     INNER JOIN 
-    //         " . MAIN_DB_PREFIX . "product p ON cd.fk_product = p.rowid
-    //     INNER JOIN 
-    //         " . MAIN_DB_PREFIX . "societe s ON s.rowid = c.fk_soc
-    //           LEFT JOIN 
-    //         " . MAIN_DB_PREFIX . "product_stock ps ON ps.fk_product = p.rowid
-    //     LEFT JOIN 
-    //         " . MAIN_DB_PREFIX . "entrepot e ON ps.fk_entrepot = e.rowid
-    //     LEFT JOIN 
-    //         " . MAIN_DB_PREFIX . "expeditiondet ed ON ed.fk_origin_line = cd.rowid
-    //     LEFT JOIN 
-    //         " . MAIN_DB_PREFIX . "entrepot ee ON ed.fk_entrepot = ee.rowid
-    //     LEFT JOIN 
-    //         " . MAIN_DB_PREFIX . "product_fournisseur_price pf ON pf.fk_product = p.rowid
-    //     LEFT JOIN 
-    //         " . MAIN_DB_PREFIX . "societe sf ON sf.rowid = pf.fk_soc
-    //    WHERE 
-
-    //    YEAR(c.date_commande) = 2024
-    //     AND p.ref NOT LIKE 'frais_de_port%'
-    //     AND p.ref NOT LIKE '%PrestaShipping%'
-    //     ORDER BY 
-    //         $sort $order
-    //         LIMIT $limit OFFSET $offset";
-
-    //     public function getOrdersByYear($year, $sort = 'date_commande', $order = 'ASC', $limit = 25, $offset = 0)
-    //     {
-    //         $allowedSortFields = ['commande_id', 'product_ref', 'qty', 'weight', 'date_commande'];
-    //         $allowedOrder = ['ASC', 'DESC'];
-
-    //         if (!in_array($sort, $allowedSortFields)) {
-    //             $sort = 'date_commande';
-    //         }
-    //         if (!in_array($order, $allowedOrder)) {
-    //             $order = 'ASC';
-    //         }
-
-    //         $sql = "SELECT 
-    //     c.rowid,
-    //     c.ref,
-    //     c.date_commande,
-    //     SUM(cd.qty) AS total_qty,
-    //     SUM(p.weight * cd.qty) AS total_weight,
-    //     GROUP_CONCAT(DISTINCT p.ref) AS product_refs,
-    //     s.rowid AS societe_id, 
-    //     s.nom,
-    //     s.address, 
-    //     s.zip, 
-    //     s.town,
-    //     MAX(ee.ref) AS expedition_entrepot_ref,
-    //     MAX(CASE 
-    //         WHEN ee.ref = 'STOCK-ACTILEV-GAILLON' THEN 'Route de la Garenne, 27600 Gaillon'
-    //         WHEN ee.ref = 'STOCK-DEPOT' THEN 'Châteaubernard, 16100'
-    //         ELSE NULL
-    //     END) AS transit_address,
-    //     MAX(sf.rowid) AS fournisseur_id,
-    //     MAX(sf.nom) AS fournisseur_name,
-    //     MAX(sf.address) AS fournisseur_address,
-    //     MAX(sf.zip) AS fournisseur_zip,
-    //     MAX(sf.town) AS fournisseur_town,
-    //     dc.distance,
-    //     dc.co2
-    // FROM 
-    //     llx_commande c
-    // INNER JOIN 
-    //     llx_commandedet cd ON c.rowid = cd.fk_commande
-    // INNER JOIN 
-    //     llx_product p ON cd.fk_product = p.rowid
-    // INNER JOIN 
-    //     llx_societe s ON s.rowid = c.fk_soc
-    // LEFT JOIN 
-    //     llx_expeditiondet ed ON ed.fk_origin_line = cd.rowid
-    // LEFT JOIN 
-    //     llx_entrepot ee ON ed.fk_entrepot = ee.rowid
-    // LEFT JOIN 
-    //     llx_product_fournisseur_price pf ON pf.fk_product = p.rowid
-    // LEFT JOIN 
-    //     llx_societe sf ON sf.rowid = pf.fk_soc
-    // LEFT JOIN 
-    //     llx_distance_cache dc ON 
-    //         dc.client_address = CONCAT(s.address, ', ', s.zip, ' ', s.town) AND
-    //         dc.supplier_address = CONCAT(sf.address, ', ', sf.zip, ' ', sf.town) AND
-    //         dc.transit_address = CASE 
-    //             WHEN ee.ref = 'STOCK-ACTILEV-GAILLON' THEN 'Route de la Garenne, 27600 Gaillon'
-    //             WHEN ee.ref = 'STOCK-DEPOT' THEN 'Châteaubernard, 16100'
-    //             ELSE NULL
-    //         END
-    // WHERE 
-    //     YEAR(c.date_commande) = 2024
-    //     AND p.ref NOT LIKE 'frais_de_port%'
-    //     AND p.ref NOT LIKE '%PrestaShipping%'
-    // GROUP BY 
-    //     c.rowid, c.ref, c.date_commande, 
-    //     s.rowid, s.nom, s.address, s.zip, s.town,
-    //     dc.distance, dc.co2
-    // ORDER BY 
-    //     c.date_commande ASC
-    // LIMIT 25 OFFSET 0";
-
-
-    //         // $result = $this->db->query($this->db->build_sql_match($sql, [$year, $limit, $offset]));
-
-    //         $result = $this->db->query($sql, array($year, $limit, $offset));
-    //         if (!$result) {
-    //             dol_print_error($this->db);
-    //             return [];
-    //         }
-
-    //         $orders = [];
-    //         while ($obj = $this->db->fetch_object($result)) {
-    //             $orders[] = $obj;
-    //         }
-
-    //         return $orders;
-    //     }
-
     public function getOrdersByYear($year, $sort = 'date_commande', $order = 'ASC', $limit = 25, $offset = 0)
     {
         $allowedSortFields = ['commande_id', 'product_ref', 'qty', 'weight', 'date_commande'];
@@ -191,67 +26,68 @@ class MyOrderModel
         $offset = (int)$offset;
 
         $sql = "SELECT 
-            c.rowid,
-            c.ref,
-            c.date_commande,
-            SUM(cd.qty) AS total_qty,
-            SUM(p.weight * cd.qty) AS total_weight,
-            GROUP_CONCAT(DISTINCT p.ref) AS product_refs,
-            s.rowid AS societe_id, 
-            s.nom,
-            s.address, 
-            s.zip, 
-            s.town,
-            MAX(ee.ref) AS expedition_entrepot_ref,
-            MAX(CASE 
-                WHEN ee.ref = 'STOCK-ACTILEV-GAILLON' THEN 'Route de la Garenne, 27600 Gaillon'
-                WHEN ee.ref = 'STOCK-DEPOT' THEN 'Châteaubernard, 16100'
-                ELSE NULL
-            END) AS transit_address,
-            MAX(sf.rowid) AS fournisseur_id,
-            MAX(sf.nom) AS fournisseur_name,
-            MAX(sf.address) AS fournisseur_address,
-            MAX(sf.zip) AS fournisseur_zip,
-            MAX(sf.town) AS fournisseur_town,
-            dc.distance,
-            dc.co2
-        FROM 
-            " . MAIN_DB_PREFIX . "commande c
-        INNER JOIN 
-            " . MAIN_DB_PREFIX . "commandedet cd ON c.rowid = cd.fk_commande
-        INNER JOIN 
-            " . MAIN_DB_PREFIX . "product p ON cd.fk_product = p.rowid
-        INNER JOIN 
-            " . MAIN_DB_PREFIX . "societe s ON s.rowid = c.fk_soc
-        LEFT JOIN 
-            " . MAIN_DB_PREFIX . "expeditiondet ed ON ed.fk_origin_line = cd.rowid
-        LEFT JOIN 
-            " . MAIN_DB_PREFIX . "entrepot ee ON ed.fk_entrepot = ee.rowid
-        LEFT JOIN 
-            " . MAIN_DB_PREFIX . "product_fournisseur_price pf ON pf.fk_product = p.rowid
-        LEFT JOIN 
-            " . MAIN_DB_PREFIX . "societe sf ON sf.rowid = pf.fk_soc
-        LEFT JOIN 
-            " . MAIN_DB_PREFIX . "distance_cache dc ON 
-                  UPPER(TRIM(dc.client_address)) = UPPER(TRIM(CONCAT(s.address, ', ', s.zip, ' ', s.town))) AND
-    UPPER(TRIM(dc.supplier_address)) = UPPER(TRIM(CONCAT(sf.address, ', ', sf.zip, ' ', sf.town))) AND
-    UPPER(TRIM(dc.transit_address)) = UPPER(TRIM(CASE 
-        WHEN ee.ref = 'STOCK-ACTILEV-GAILLON' THEN 'Route de la Garenne, 27600 Gaillon'
-        WHEN ee.ref = 'STOCK-DEPOT' THEN 'Châteaubernard, 16100'
-        ELSE NULL
-    END))
-        WHERE 
-            YEAR(c.date_commande) = 2024
-            AND p.ref NOT LIKE 'frais_de_port%'
-            AND p.ref NOT LIKE '%PrestaShipping%'
-        GROUP BY 
-            c.rowid, c.ref, c.date_commande, 
-            s.rowid, s.nom, s.address, s.zip, s.town,
-            dc.distance, dc.co2
-        ORDER BY 
-            " . $sort . " " . $order . "
-        LIMIT " . $limit . " OFFSET " . $offset;
+                c.rowid,
+                c.ref,
+                c.date_commande,
+                SUM(cd.qty) AS total_qty,
+                SUM(p.weight * cd.qty) AS total_weight,
+                GROUP_CONCAT(DISTINCT p.ref) AS product_refs,
+                s.rowid AS societe_id, 
+                s.nom,
+                s.address, 
+                s.zip, 
+                s.town,
+                MAX(ee.ref) AS expedition_entrepot_ref,
+                MAX(CASE 
+                    WHEN ee.ref = 'STOCK-ACTILEV-GAILLON' THEN 'Route de la Garenne, 27600 Gaillon'
+                    WHEN ee.ref = 'STOCK-DEPOT' THEN 'Châteaubernard, 16100'
+                    ELSE NULL
+                END) AS transit_address,
+                MAX(sf.rowid) AS fournisseur_id,
+                MAX(sf.nom) AS fournisseur_name,
+                MAX(sf.address) AS fournisseur_address,
+                MAX(sf.zip) AS fournisseur_zip,
+                MAX(sf.town) AS fournisseur_town,
+                dc.distance,
+                dc.co2
+            FROM 
+                " . MAIN_DB_PREFIX . "commande c
+            INNER JOIN 
+                " . MAIN_DB_PREFIX . "commandedet cd ON c.rowid = cd.fk_commande
+            INNER JOIN 
+                " . MAIN_DB_PREFIX . "product p ON cd.fk_product = p.rowid
+            INNER JOIN 
+                " . MAIN_DB_PREFIX . "societe s ON s.rowid = c.fk_soc
+            LEFT JOIN 
+                " . MAIN_DB_PREFIX . "expeditiondet ed ON ed.fk_origin_line = cd.rowid
+            LEFT JOIN 
+                " . MAIN_DB_PREFIX . "entrepot ee ON ed.fk_entrepot = ee.rowid
+            LEFT JOIN 
+                " . MAIN_DB_PREFIX . "product_fournisseur_price pf ON pf.fk_product = p.rowid
+            LEFT JOIN 
+                " . MAIN_DB_PREFIX . "societe sf ON sf.rowid = pf.fk_soc
+            LEFT JOIN 
+                " . MAIN_DB_PREFIX . "distance_cache dc ON 
+                      UPPER(TRIM(dc.client_address)) = UPPER(TRIM(CONCAT(s.address, ', ', s.zip, ' ', s.town))) AND
+        UPPER(TRIM(dc.supplier_address)) = UPPER(TRIM(CONCAT(sf.address, ', ', sf.zip, ' ', sf.town))) AND
+        UPPER(TRIM(dc.transit_address)) = UPPER(TRIM(CASE 
+            WHEN ee.ref = 'STOCK-ACTILEV-GAILLON' THEN 'Route de la Garenne, 27600 Gaillon'
+            WHEN ee.ref = 'STOCK-DEPOT' THEN 'Châteaubernard, 16100'
+            ELSE NULL
+        END))
+            WHERE 
+                YEAR(c.date_commande) = 2024
+                AND p.ref NOT LIKE 'frais_de_port%'
+                AND p.ref NOT LIKE '%PrestaShipping%'
+            GROUP BY 
+                c.rowid, c.ref, c.date_commande, 
+                s.rowid, s.nom, s.address, s.zip, s.town,
+                dc.distance, dc.co2
+            ORDER BY 
+                " . $sort . " " . $order . "
+            LIMIT " . $limit . " OFFSET " . $offset;
 
+        // WHERE YEAR(c.date_commande) = " . intval($year) . "
         // error_log("SQL Debug - Recherche dans cache : " . $sql);
 
 
@@ -280,7 +116,7 @@ class MyOrderModel
 
     public function calculateDistance($clientAddress, $transitAddress, $supplierAddress = null)
     {
-        $apiKey = 'NpDmJrHBrbbRpQMavTD4JqAdPcWArSgoolEdaQ9Z9W2dSv4l8OG9Ir4AjwHb9Z0V';
+        $apiKey = 'ksiu53cxlv9SAHTk4g9xULyC9rh0EdUNGFaaZyJaDRYp9lqBNGc4KTrHe7QMcX7c';
 
 
         // error_log("Début du calcul de distance");

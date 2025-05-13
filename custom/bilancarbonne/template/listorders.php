@@ -393,7 +393,7 @@ $resultsPerPageOptions = [10, 25, 50, 100];
 		progressText.textContent = '0%';
 
 		// Lancer le script de calcul en arrière-plan
-		fetch('controller/background/calculate_all_orders.php?year=2024')
+		fetch('htdocs/custom/bilancarbone/controller/background/calculate_all_orders.php?year=2024')
 			.then(response => response.json())
 			.then(data => {
 				if (!data.success) {

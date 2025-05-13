@@ -1,0 +1,16 @@
+[2025-05-12 14:50:33] Démarrage du script calculate_all_orders.php
+[2025-05-12 14:51:00] Démarrage du script calculate_all_orders.php
+[2025-05-12 14:51:31] Démarrage du script calculate_all_orders.php
+[2025-05-12 14:51:57] Commande ID 20516 calculée : Distance = 157.48km, CO2 = 15.073814156914kg
+[2025-05-12 15:01:09] Démarrage du script calculate_all_orders.php
+[2025-05-12 15:01:27] Commande ID 20549 calculée : Distance = 770.14km, CO2 = 16.465346185492kg
+[2025-05-12 15:01:38] Démarrage du script calculate_all_orders.php
+[2025-05-12 15:02:28] Démarrage du script calculate_all_orders.php
+[2025-05-12 15:02:45] Commande ID 20604 calculée : Distance = 580.65km, CO2 = 1.7546777853597kg
+[2025-05-12 15:02:48] Commande ID 20606 calculée : Distance = 748.14km, CO2 = 7.25396544kg
+[2025-05-12 15:02:58] Commande ID 20611 calculée : Distance = 187.66km, CO2 = 0.65094451270517kg
+[2025-05-12 15:06:32] Démarrage du script calculate_all_orders.php
+[2025-05-12 15:06:48] Commande ID 20632 calculée : Distance = 493.66km, CO2 = 0.039887728kg
+[2025-05-12 15:06:56] Commande ID 20638 calculée : Distance = 859.52km, CO2 = 0.49545069889682kg
+[2025-05-12 15:07:00] Commande ID 20640 calculée : Distance = 1342.28km, CO2 = 1.1583124795602kg
+[2025-05-12 15:07:14] Commande ID 20651 calculée : Distance = 780.61km, CO2 = 0.063073288kg
