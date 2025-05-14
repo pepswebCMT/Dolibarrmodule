@@ -20,7 +20,7 @@
 # Module label 'ModuleStockalerteName'
 ModuleStockalerteName = Stockalerte
 # Module description 'ModuleStockalerteDesc'
-ModuleStockalerteDesc = Stockalerte description
+ModuleStockalerteDesc = Stock Alerte permet de surveiller les niveaux de stock minimum définis pour chaque produit.
 
 #
 # Admin page

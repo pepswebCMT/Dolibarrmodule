@@ -45,7 +45,7 @@ class modStockalerte extends DolibarrModules
 
 		// Id for module (must be unique).
 		// Use here a free id (See in Home -> System information -> Dolibarr for list of used modules id).
-		$this->numero = 500000; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
+		$this->numero = 511111; // TODO Go on page https://wiki.dolibarr.org/index.php/List_of_modules_id to reserve an id number for your module
 
 		// Key text used to identify module (for permissions, menus, etc...)
 		$this->rights_class = 'stockalerte';
@@ -274,6 +274,22 @@ class modStockalerte extends DolibarrModules
 		$this->rights = array();
 		$r = 0;
 		// Add here entries to declare new permissions
+		$o = 1;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", ($o * 10) + 1); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Read objects of Stockalerte'; // Permission label
+		$this->rights[$r][4] = 'myobject';
+		$this->rights[$r][5] = 'read'; // In php code, permission will be checked by test if ($user->hasRight('stockalerte', 'myobject', 'read'))
+		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", ($o * 10) + 2); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Create/Update objects of Stockalerte'; // Permission label
+		$this->rights[$r][4] = 'myobject';
+		$this->rights[$r][5] = 'write'; // In php code, permission will be checked by test if ($user->hasRight('stockalerte', 'myobject', 'write'))
+		$r++;
+		$this->rights[$r][0] = $this->numero . sprintf("%02d", ($o * 10) + 3); // Permission id (must not be already used)
+		$this->rights[$r][1] = 'Delete objects of Stockalerte'; // Permission label
+		$this->rights[$r][4] = 'myobject';
+		$this->rights[$r][5] = 'delete'; // In php code, permission will be checked by test if ($user->hasRight('stockalerte', 'myobject', 'delete'))
+		$r++;
 		/* BEGIN MODULEBUILDER PERMISSIONS */
 		/*
 		$o = 1;
@@ -301,12 +317,13 @@ class modStockalerte extends DolibarrModules
 		// Add here entries to declare new menus
 		/* BEGIN MODULEBUILDER TOPMENU */
 		$this->menu[$r++] = array(
-			'fk_menu' => '', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
-			'type' => 'top', // This is a Top menu entry
-			'titre' => 'ModuleStockalerteName',
+			// 'fk_menu' => '', // '' if this is a top menu. For left menu, use 'fk_mainmenu=xxx' or 'fk_mainmenu=xxx,fk_leftmenu=yyy' where xxx is mainmenucode and yyy is a leftmenucode
+			'fk_menu' => 'fk_mainmenu=products,fk_leftmenu=product',
+			'type' => 'left', // This is a Top menu entry
+			'titre' => 'Stock Alerte',
 			'prefix' => img_picto('', $this->picto, 'class="pictofixedwidth valignmiddle"'),
-			'mainmenu' => 'stockalerte',
-			'leftmenu' => '',
+			'mainmenu' => '',
+			'leftmenu' => 'stockalerte',
 			'url' => '/stockalerte/stockalerteindex.php',
 			'langs' => 'stockalerte@stockalerte', // Lang file to use (without .lang) by module. File must be in langs/code_CODE/ directory.
 			'position' => 1000 + $r,
