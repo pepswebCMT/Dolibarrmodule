@@ -341,7 +341,7 @@ llxHeader("", $title);
 print load_fiche_titre($title, '', 'product');
 
 // Légende pour les couleurs d'alerte
-print '<style>.stock-critical{color:#cc0000;font-weight:bold}.stock-warning{color:#cc7a00;font-weight:bold}</style>';
+print '<style>.stock-critical{color:#cc0000;font-weight:bold}.stock-warning{color:#cc7a00;font-weight:bold}.stock-negative{color:#b50000;font-weight:bold;}</style>';
 print '<div style="margin-bottom:10px;"><span style="margin-right:15px;"><span style="color:#cc0000;font-weight:bold;">■</span> ' . $langs->trans("Stock critique") . ' (< 50% du seuil)</span><span><span style="color:#cc7a00;font-weight:bold;">■</span> ' . $langs->trans("Stock en alerte") . ' (≥ 50% du seuil)</span></div>';
 
 // Formulaire de filtrage
@@ -425,20 +425,16 @@ if ($resql) {
 		print '</tr>';
 
 		while ($obj = $db->fetch_object($resql)) {
-			$stockClass = '';
-			// Colorier uniquement les produits en alerte
-			if (!empty($obj->seuil_stock_alerte) && $obj->reel !== null && $obj->reel <= $obj->seuil_stock_alerte) {
-				$stockClass = ($obj->reel <= $obj->seuil_stock_alerte * 0.5) ? 'stock-critical' : 'stock-warning';
-			}
-
+			$stockClass = ($obj->reel <= $obj->seuil_stock_alerte * 0.5) ? 'stock-critical' : 'stock-warning';
+			$negativeClass = ($obj->reel < 0) ? 'stock-negative' : $stockClass;
 			print '<tr class="oddeven">';
 			print '<td class="center"><input type="checkbox" name="select_product[]" class="checkforselect" value="' . $obj->rowid . '"></td>';
 			print '<td><a href="' . DOL_URL_ROOT . '/product/card.php?id=' . $obj->rowid . '">' . dol_escape_htmltag($obj->ref) . '</a></td>';
 			print '<td>' . dol_escape_htmltag($obj->label) . '</td>';
 			print '<td>' . dol_escape_htmltag($obj->entrepot_ref . ($obj->entrepot_lieu ? ' - ' . $obj->entrepot_lieu : '')) . '</td>';
 			print '<td>' . dol_escape_htmltag($obj->fournisseur_nom) . '</td>';
-			print '<td class="' . $stockClass . '">' . (isset($obj->reel) ? $obj->reel : '') . '</td>';
-			print '<td>' . (isset($obj->seuil_stock_alerte) ? $obj->seuil_stock_alerte : '') . '</td>';
+			print '<td class="' . $negativeClass . '">' . $obj->reel . '</td>';
+			print '<td>' . $obj->seuil_stock_alerte . '</td>';
 			print '</tr>';
 		}
 
