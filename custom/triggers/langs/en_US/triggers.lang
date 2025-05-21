@@ -1,0 +1,54 @@
+# Copyright (C) 2025 SuperAdmin <actilev.produits@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#
+# Generic
+#
+
+# Module label 'ModuleTriggersName'
+ModuleTriggersName = Triggers
+# Module description 'ModuleTriggersDesc'
+ModuleTriggersDesc = Ce trigger récupère les infos du tiers et les intègre automatiquement à la commande lors de sa création.
+
+#
+# Admin page
+#
+TriggersSetup = Triggers setup
+Settings = Settings
+TriggersSetupPage = Triggers setup page
+TRIGGERS_MYPARAM1 = My param 1
+TRIGGERS_MYPARAM1Tooltip = My param 1 tooltip
+TRIGGERS_MYPARAM2=My param 2
+TRIGGERS_MYPARAM2Tooltip=My param 2 tooltip
+
+
+#
+# About page
+#
+About = About
+TriggersAbout = About Triggers
+TriggersAboutPage = Triggers about page
+
+#
+# Sample page
+#
+TriggersArea = Home Triggers
+MyPageName = My page name
+
+#
+# Sample widget
+#
+MyWidget = My widget
+MyWidgetDescription = My widget description
