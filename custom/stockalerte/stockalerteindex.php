@@ -1,282 +1,28 @@
 <?php
-// /* Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
-//  * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
-//  * Copyright (C) 2005-2012 Regis Houssin        <regis.houssin@inodbox.com>
-//  * Copyright (C) 2015      Jean-François Ferry	<jfefe@aternatik.fr>
-//  *
-//  * This program is free software; you can redistribute it and/or modify
-//  * it under the terms of the GNU General Public License as published by
-//  * the Free Software Foundation; either version 3 of the License, or
-//  * (at your option) any later version.
-//  *
-//  * This program is distributed in the hope that it will be useful,
-//  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  * GNU General Public License for more details.
-//  *
-//  * You should have received a copy of the GNU General Public License
-//  * along with this program. If not, see <https://www.gnu.org/licenses/>.
-//  */
+/* Copyright (C) 2001-2005 Rodolphe Quiedeville <rodolphe@quiedeville.org>
+ * Copyright (C) 2004-2015 Laurent Destailleur  <eldy@users.sourceforge.net>
+ * Copyright (C) 2005-2012 Regis Houssin        <regis.houssin@inodbox.com>
+ * Copyright (C) 2015      Jean-François Ferry	<jfefe@aternatik.fr>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
-// /**
-//  *	\file       stockalerte/stockalerteindex.php
-//  *	\ingroup    stockalerte
-//  *	\brief      Home page of stockalerte top menu
-//  */
-
-// // Load Dolibarr environment
-// $res = 0;
-// // Try main.inc.php into web root known defined into CONTEXT_DOCUMENT_ROOT (not always defined)
-// if (!$res && !empty($_SERVER["CONTEXT_DOCUMENT_ROOT"])) {
-// 	$res = @include $_SERVER["CONTEXT_DOCUMENT_ROOT"] . "/main.inc.php";
-// }
-// // Try main.inc.php into web root detected using web root calculated from SCRIPT_FILENAME
-// $tmp = empty($_SERVER['SCRIPT_FILENAME']) ? '' : $_SERVER['SCRIPT_FILENAME'];
-// $tmp2 = realpath(__FILE__);
-// $i = strlen($tmp) - 1;
-// $j = strlen($tmp2) - 1;
-// while ($i > 0 && $j > 0 && isset($tmp[$i]) && isset($tmp2[$j]) && $tmp[$i] == $tmp2[$j]) {
-// 	$i--;
-// 	$j--;
-// }
-// if (!$res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1)) . "/main.inc.php")) {
-// 	$res = @include substr($tmp, 0, ($i + 1)) . "/main.inc.php";
-// }
-// if (!$res && $i > 0 && file_exists(dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php")) {
-// 	$res = @include dirname(substr($tmp, 0, ($i + 1))) . "/main.inc.php";
-// }
-// // Try main.inc.php using relative path
-// if (!$res && file_exists("../main.inc.php")) {
-// 	$res = @include "../main.inc.php";
-// }
-// if (!$res && file_exists("../../main.inc.php")) {
-// 	$res = @include "../../main.inc.php";
-// }
-// if (!$res && file_exists("../../../main.inc.php")) {
-// 	$res = @include "../../../main.inc.php";
-// }
-// if (!$res) {
-// 	die("Include of main fails");
-// }
-
-// require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
-// require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
-// require_once DOL_DOCUMENT_ROOT . '/fourn/class/fournisseur.class.php';
-// require_once DOL_DOCUMENT_ROOT . '/product/stock/class/entrepot.class.php';
-// require_once DOL_DOCUMENT_ROOT . '/product/class/html.formproduct.class.php';
-
-// // Load translation files required by the page
-// $langs->loadLangs(array("stockalerte@stockalerte", "products", "stocks", "suppliers"));
-
-// $action = GETPOST('action', 'aZ09');
-
-// // Paramètre pour l'affichage AJAX
-// $mode = GETPOST('mode', 'alpha');
-
-// // Paramètres pour les filtres
-// $fk_entrepot = GETPOST('fk_entrepot', 'int');
-// $fk_fournisseur = GETPOST('fk_fournisseur', 'int');
-
-// $max = 5;
-// $now = dol_now();
-
-// // Security check - Protection if external user
-// $socid = GETPOST('socid', 'int');
-// if (isset($user->socid) && $user->socid > 0) {
-// 	$action = '';
-// 	$socid = $user->socid;
-// }
-
-// /*
-//  * View
-//  */
-
-// // Si on est en mode AJAX, on retourne uniquement le tableau des produits
-// if ($mode == 'ajax') {
-// 	displayStockAlert($db, $langs, $fk_entrepot, $fk_fournisseur);
-// 	exit;
-// }
-
-// $form = new Form($db);
-// $formfile = new FormFile($db);
-// $entrepot = new Entrepot($db);
-// $fournisseur = new Fournisseur($db);
-// $formproduct = new FormProduct($db);
-
-// llxHeader("", $langs->trans("StockalerteArea"), '', '', 0, 0, '', '', '', 'mod-stockalerte page-index');
-
-// print load_fiche_titre($langs->trans("Produits en alerte de stock"), '', 'product');
-
-// // Légende simple pour les couleurs
-// print '<div style="margin-bottom: 10px;">';
-// print '<span style="margin-right: 15px;"><span style="color: #cc0000; font-weight: bold;">■</span> ' . $langs->trans("Stock critique") . ' (< 50% du seuil)</span>';
-// print '<span><span style="color: #cc7a00; font-weight: bold;">■</span> ' . $langs->trans("Stock en alerte") . ' (≥ 50% du seuil)</span>';
-// print '</div>';
-
-// // Ajout de styles simples - uniquement des couleurs de texte, sans fond
-// print '<style type="text/css">
-//     .stock-critical {
-//         color: #cc0000;
-//         font-weight: bold;
-//     }
-//     .stock-warning {
-//         color: #cc7a00;
-//         font-weight: bold;
-//     }
-// </style>';
-
-// // Formulaire de filtre
-// print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
-// print '<input type="hidden" name="token" value="' . newToken() . '">';
-// print '<div class="inline-block opacitymedium marginrightonly">' . $langs->trans("Filtres") . '</div>';
-// print '<div class="inline-block marginrightonly">';
-// print $langs->trans("Entrepôt") . ': ';
-// print $formproduct->selectWarehouses($fk_entrepot, 'fk_entrepot', '', 1);
-// print '</div>';
-// print '<div class="inline-block marginrightonly">';
-// print $langs->trans("Fournisseur") . ': ';
-// print $form->select_company($fk_fournisseur, 'fk_fournisseur', 's.fournisseur = 1', 1);
-// print '</div>';
-// print '<div class="inline-block">';
-// print '<input type="submit" class="button" name="search" value="' . $langs->trans("Filtrer") . '">';
-// print '</div>';
-// print '</form>';
-
-// // Div pour contenir la liste des produits en alerte
-// print '<div id="stock-alert-container">';
-// displayStockAlert($db, $langs, $fk_entrepot, $fk_fournisseur);
-// print '</div>';
-
-// // Ajout d'un bouton pour rafraîchir
-// print '<div class="tabsAction" style="text-align: right; margin-top: 10px;">';
-// print '<a class="butAction" href="javascript:void(0);" onclick="refreshStockAlerts();">' . $langs->trans("Rafraîchir") . '</a>';
-// print '</div>';
-
-// // Script JavaScript pour l'actualisation automatique
-// print '<script type="text/javascript">
-// function refreshStockAlerts() {
-//     fetch("' . $_SERVER["PHP_SELF"] . '?mode=ajax&fk_entrepot=' . $fk_entrepot . '&fk_fournisseur=' . $fk_fournisseur . '")
-//         .then(response => response.text())
-//         .then(data => {
-//             document.getElementById("stock-alert-container").innerHTML = data;
-//         })
-//         .catch(error => console.error("Erreur lors du rafraîchissement:", error));
-// }
-
-// // Auto-refresh toutes les 60 secondes
-// setInterval(refreshStockAlerts, 60000);
-// </script>';
-
-// // End of page
-// llxFooter();
-// $db->close();
-
-// /**
-//  * Fonction pour afficher la liste des produits en alerte de stock
-//  *
-//  * @param DoliDB $db               Database handler
-//  * @param Translate $langs         Language object
-//  * @param int $fk_entrepot         ID de l'entrepôt pour filtrer
-//  * @param int $fk_fournisseur      ID du fournisseur pour filtrer
-//  * @return void
-//  */
-// function displayStockAlert($db, $langs, $fk_entrepot = 0, $fk_fournisseur = 0)
-// {
-// 	$sql = "SELECT p.rowid, p.ref, p.label, p.seuil_stock_alerte, ps.reel,";
-// 	$sql .= " e.rowid as entrepot_id, e.ref as entrepot_ref, e.lieu as entrepot_lieu,";
-// 	$sql .= " s.rowid as fournisseur_id, s.nom as fournisseur_nom";
-// 	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
-// 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid";
-// 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON e.rowid = ps.fk_entrepot";
-// 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid";
-// 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
-// 	$sql .= " WHERE p.tosell = 1";
-// 	$sql .= " AND p.seuil_stock_alerte IS NOT NULL";
-// 	$sql .= " AND ps.reel <= p.seuil_stock_alerte";
-
-// 	// Ajout des filtres
-// 	if ($fk_entrepot > 0) {
-// 		$sql .= " AND ps.fk_entrepot = " . (int) $fk_entrepot;
-// 	}
-
-// 	if ($fk_fournisseur > 0) {
-// 		$sql .= " AND pfp.fk_soc = " . (int) $fk_fournisseur;
-// 	}
-
-// 	$sql .= " GROUP BY p.rowid, ps.rowid"; // Pour éviter les doublons si un produit a plusieurs fournisseurs
-// 	$sql .= " ORDER BY ps.reel ASC";
-
-// 	$resql = $db->query($sql);
-
-// 	if ($resql) {
-// 		$num = $db->num_rows($resql);
-
-// 		print '<table class="liste centpercent">';
-// 		print '<tr class="liste_titre">';
-// 		print '<th>' . $langs->trans("Réf.") . '</th>';
-// 		print '<th>' . $langs->trans("Nom") . '</th>';
-// 		print '<th>' . $langs->trans("Entrepôt") . '</th>';
-// 		print '<th>' . $langs->trans("Fournisseur") . '</th>';
-// 		print '<th>' . $langs->trans("Stock") . '</th>';
-// 		print '<th>' . $langs->trans("Seuil alerte") . '</th>';
-// 		print '</tr>';
-
-// 		if ($num > 0) {
-// 			while ($obj = $db->fetch_object($resql)) {
-// 				// Détermination simple de la classe pour la coloration
-// 				$stockClass = '';
-// 				if ($obj->reel <= $obj->seuil_stock_alerte * 0.5) {
-// 					// Stock inférieur à 50% du seuil = critique (rouge)
-// 					$stockClass = 'stock-critical';
-// 				} else {
-// 					// Stock entre 50% et 100% du seuil = avertissement (jaune)
-// 					$stockClass = 'stock-warning';
-// 				}
-
-// 				print '<tr class="oddeven">';
-// 				print '<td><a href="' . DOL_URL_ROOT . '/product/card.php?id=' . $obj->rowid . '">' . dol_escape_htmltag($obj->ref) . '</a></td>';
-// 				print '<td>' . dol_escape_htmltag($obj->label) . '</td>';
-
-// 				// Colonne entrepôt
-// 				print '<td>';
-// 				if (!empty($obj->entrepot_id)) {
-// 					print '<a href="' . DOL_URL_ROOT . '/product/stock/card.php?id=' . $obj->entrepot_id . '">' .
-// 						dol_escape_htmltag($obj->entrepot_ref) . (!empty($obj->entrepot_lieu) ? ' - ' . $obj->entrepot_lieu : '') . '</a>';
-// 				} else {
-// 					print $langs->trans("NonDéfini");
-// 				}
-// 				print '</td>';
-
-// 				// Colonne fournisseur
-// 				print '<td>';
-// 				if (!empty($obj->fournisseur_id)) {
-// 					print '<a href="' . DOL_URL_ROOT . '/fourn/card.php?socid=' . $obj->fournisseur_id . '">' .
-// 						dol_escape_htmltag($obj->fournisseur_nom) . '</a>';
-// 				} else {
-// 					print $langs->trans("NonDéfini");
-// 				}
-// 				print '</td>';
-
-// 				print '<td class="' . $stockClass . '">' . $obj->reel . '</td>';
-// 				print '<td>' . $obj->seuil_stock_alerte . '</td>';
-// 				print '</tr>';
-// 			}
-// 		} else {
-// 			print '<tr><td colspan="6" class="opacitymedium">' . $langs->trans("AucunProduitEnAlerte") . '</td></tr>';
-// 		}
-
-// 		print '</table>';
-
-// 		// Date de dernière mise à jour
-// 		print '<div class="right" style="margin-top: 5px; font-style: italic; font-size: 0.9em;">';
-// 		print $langs->trans("Dernière mise à jour") . ': ' . dol_print_date(dol_now(), 'dayhourtext');
-// 		print '</div>';
-// 	} else {
-// 		dol_print_error($db);
-// 	}
-// }
-
-
+/*
+ *	\file       stockalerte/stockalerteindex.php
+ *	\ingroup    stockalerte
+ *	\brief      Home page of stockalerte top menu
+ */
 
 require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
@@ -353,33 +99,90 @@ print '<div class="inline-block"><label><input type="checkbox" name="show_all" v
 print '<input type="submit" name="search" class="button" value="' . $langs->trans("Filtrer") . '">';
 print '</form><br>';
 
-// Construction de la requête SQL
-$sql = "SELECT p.rowid, p.ref, p.label, p.seuil_stock_alerte, ps.reel, e.ref as entrepot_ref, 
-               e.rowid as entrepot_id, e.lieu as entrepot_lieu, s.nom as fournisseur_nom, s.rowid as fournisseur_id";
+/**
+ * Fonction pour calculer le stock virtuel d'un produit
+ * @param int $product_id ID du produit
+ * @param int $warehouse_id ID de l'entrepôt (0 pour tous)
+ * @param object $db Connexion à la base de données
+ * @return float Stock virtuel
+ */
+function calculateVirtualStock($product_id, $warehouse_id, $db)
+{
+	// Stock physique
+	$sql_stock = "SELECT SUM(ps.reel) as stock_reel FROM " . MAIN_DB_PREFIX . "product_stock as ps WHERE ps.fk_product = " . ((int) $product_id);
+	if ($warehouse_id > 0) {
+		$sql_stock .= " AND ps.fk_entrepot = " . ((int) $warehouse_id);
+	}
+
+	$resql_stock = $db->query($sql_stock);
+	$stock_reel = 0;
+	if ($resql_stock && ($obj = $db->fetch_object($resql_stock))) {
+		$stock_reel = (float) $obj->stock_reel;
+	}
+
+	// Commandes clients en cours (à déduire)
+	$sql_cmd_client = "SELECT SUM(cd.qty) as qty_cmd_client 
+                       FROM " . MAIN_DB_PREFIX . "commandedet as cd
+                       INNER JOIN " . MAIN_DB_PREFIX . "commande as c ON c.rowid = cd.fk_commande
+                       WHERE cd.fk_product = " . ((int) $product_id) . " AND c.fk_statut IN (1, 2)";
+
+	$resql_cmd_client = $db->query($sql_cmd_client);
+	$qty_cmd_client = 0;
+	if ($resql_cmd_client && ($obj = $db->fetch_object($resql_cmd_client))) {
+		$qty_cmd_client = (float) $obj->qty_cmd_client;
+	}
+
+	// Commandes fournisseurs en cours (à ajouter)
+	$sql_cmd_fournisseur = "SELECT SUM(cfd.qty) as qty_cmd_fournisseur 
+                            FROM " . MAIN_DB_PREFIX . "commande_fournisseurdet as cfd
+                            INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur as cf ON cf.rowid = cfd.fk_commande
+                            WHERE cfd.fk_product = " . ((int) $product_id) . " AND cf.fk_statut IN (3, 4)";
+
+	$resql_cmd_fournisseur = $db->query($sql_cmd_fournisseur);
+	$qty_cmd_fournisseur = 0;
+	if ($resql_cmd_fournisseur && ($obj = $db->fetch_object($resql_cmd_fournisseur))) {
+		$qty_cmd_fournisseur = (float) $obj->qty_cmd_fournisseur;
+	}
+
+	// Calcul du stock virtuel
+	$stock_virtuel = $stock_reel - $qty_cmd_client + $qty_cmd_fournisseur;
+
+	return $stock_virtuel;
+}
+
+// Construction de la requête SQL simplifiée
+$sql = "SELECT p.rowid, p.ref, p.label, p.seuil_stock_alerte, ps.reel, 
+               e.ref as entrepot_ref, e.rowid as entrepot_id, e.lieu as entrepot_lieu, 
+               s.nom as fournisseur_nom, s.rowid as fournisseur_id";
 
 if ($show_all) {
-	// Si on affiche tous les produits
 	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
 
-	// Jointure avec les stocks
-	if ($fk_entrepot > 0) {
-		$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid AND ps.fk_entrepot = " . $fk_entrepot;
-		$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "entrepot as e ON e.rowid = ps.fk_entrepot";
-	} else {
-		$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid";
-		$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON e.rowid = ps.fk_entrepot";
-	}
+	// Stock
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON e.rowid = ps.fk_entrepot";
 
-	// Jointure avec les fournisseurs
-	if ($fk_fournisseur > 0) {
-		$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid AND pfp.fk_soc = " . $fk_fournisseur;
-		$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
-	} else {
-		$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid";
-		$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
-	}
+	// Fournisseur
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
 
 	$sql .= " WHERE p.tosell = 1";
+	$sql .= " AND p.seuil_stock_alerte IS NOT NULL";
+
+	if ($fk_entrepot > 0) {
+		$sql .= " AND ps.fk_entrepot = " . (int)$fk_entrepot;
+	}
+
+	if ($fk_fournisseur > 0) {
+		// Ici on s’assure que le produit est bien lié au fournisseur sélectionné
+		$sql .= " AND EXISTS (
+        SELECT 1 FROM " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp2
+        WHERE pfp2.fk_product = p.rowid AND pfp2.fk_soc = " . (int)$fk_fournisseur . "
+    )";
+	}
+
+	$sql .= " GROUP BY p.rowid";
+	$sql .= " ORDER BY p.ref ASC";
 } else {
 	// Si on n'affiche que les produits en alerte
 	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
@@ -388,7 +191,7 @@ if ($show_all) {
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid";
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
 
-	$sql .= " WHERE p.tosell = 1 AND p.seuil_stock_alerte IS NOT NULL AND ps.reel <= p.seuil_stock_alerte";
+	$sql .= " WHERE p.tosell = 1 AND p.seuil_stock_alerte IS NOT NULL";
 
 	if ($fk_entrepot > 0) {
 		$sql .= " AND ps.fk_entrepot = " . $fk_entrepot;
@@ -399,42 +202,90 @@ if ($show_all) {
 	}
 }
 
-$sql .= " GROUP BY p.rowid";
-
-// Tri des résultats
-if ($show_all) {
-	$sql .= " ORDER BY p.ref ASC";
-} else {
-	$sql .= " ORDER BY ps.reel ASC";
-}
+$sql .= " GROUP BY p.rowid, ps.rowid";
+$sql .= " ORDER BY p.ref ASC";
 
 // Exécution de la requête et affichage des résultats
 $resql = $db->query($sql);
 if ($resql) {
 	$num = $db->num_rows($resql);
-	if ($num > 0) {
+
+	// Tableau pour stocker les produits avec leur stock virtuel
+	$products_data = array();
+
+	while ($obj = $db->fetch_object($resql)) {
+		// Calculer le stock virtuel
+		$stock_virtuel = calculateVirtualStock($obj->rowid, $fk_entrepot, $db);
+
+		// Si on n'affiche que les alertes, filtrer selon le stock virtuel
+		if (!$show_all && $obj->seuil_stock_alerte !== null) {
+			if ($stock_virtuel > $obj->seuil_stock_alerte) {
+				continue; // Ignorer ce produit car il n'est pas en alerte
+			}
+		}
+
+		// Ajouter les données du produit au tableau
+		$products_data[] = array(
+			'rowid' => $obj->rowid,
+			'ref' => $obj->ref,
+			'label' => $obj->label,
+			'seuil_stock_alerte' => $obj->seuil_stock_alerte,
+			'stock_reel' => $obj->reel,
+			'stock_virtuel' => $stock_virtuel,
+			'entrepot_ref' => $obj->entrepot_ref,
+			'entrepot_lieu' => $obj->entrepot_lieu,
+			'fournisseur_nom' => $obj->fournisseur_nom,
+			'fournisseur_id' => $obj->fournisseur_id
+		);
+	}
+
+	// Trier les produits par stock virtuel croissant si on affiche les alertes
+	if (!$show_all) {
+		usort($products_data, function ($a, $b) {
+			return $a['stock_virtuel'] <=> $b['stock_virtuel'];
+		});
+	}
+
+	if (count($products_data) > 0) {
 		print '<form method="POST">';
 		print '<input type="hidden" name="token" value="' . newToken() . '">';
 		print '<input type="hidden" name="action" value="create_order">';
+		print '<input type="hidden" name="fk_entrepot" value="' . $fk_entrepot . '">';
 		print '<input type="hidden" name="fk_fournisseur" value="' . $fk_fournisseur . '">';
 		print '<input type="hidden" name="show_all" value="' . $show_all . '">';
 		print '<table class="liste centpercent">';
 		print '<tr class="liste_titre">';
 		print '<th class="center"><input type="checkbox" class="checkall"></th>';
-		print '<th>' . $langs->trans("Réf.") . '</th><th>' . $langs->trans("Nom") . '</th><th>' . $langs->trans("Entrepôt") . '</th><th>' . $langs->trans("Fournisseur") . '</th><th>' . $langs->trans("Stock") . '</th><th>' . $langs->trans("Seuil alerte") . '</th>';
+		print '<th>' . $langs->trans("Réf.") . '</th><th>' . $langs->trans("Nom") . '</th><th>' . $langs->trans("Entrepôt") . '</th><th>' . $langs->trans("Fournisseur") . '</th><th>' . $langs->trans("Stock virtuel") . '</th><th>' . $langs->trans("Seuil alerte") . '</th>';
 		print '</tr>';
 
-		while ($obj = $db->fetch_object($resql)) {
-			$stockClass = ($obj->reel <= $obj->seuil_stock_alerte * 0.5) ? 'stock-critical' : 'stock-warning';
-			$negativeClass = ($obj->reel < 0) ? 'stock-negative' : $stockClass;
+		foreach ($products_data as $product_data) {
+			// Déterminer les classes CSS selon le stock virtuel
+			$stockClass = '';
+			$negativeClass = '';
+
+			if ($product_data['seuil_stock_alerte'] !== null) {
+				if ($product_data['stock_virtuel'] <= $product_data['seuil_stock_alerte'] * 0.5) {
+					$stockClass = 'stock-critical';
+				} elseif ($product_data['stock_virtuel'] <= $product_data['seuil_stock_alerte']) {
+					$stockClass = 'stock-warning';
+				}
+			}
+
+			if ($product_data['stock_virtuel'] < 0) {
+				$negativeClass = 'stock-negative';
+			} else {
+				$negativeClass = $stockClass;
+			}
+
 			print '<tr class="oddeven">';
-			print '<td class="center"><input type="checkbox" name="select_product[]" class="checkforselect" value="' . $obj->rowid . '"></td>';
-			print '<td><a href="' . DOL_URL_ROOT . '/product/card.php?id=' . $obj->rowid . '">' . dol_escape_htmltag($obj->ref) . '</a></td>';
-			print '<td>' . dol_escape_htmltag($obj->label) . '</td>';
-			print '<td>' . dol_escape_htmltag($obj->entrepot_ref . ($obj->entrepot_lieu ? ' - ' . $obj->entrepot_lieu : '')) . '</td>';
-			print '<td>' . dol_escape_htmltag($obj->fournisseur_nom) . '</td>';
-			print '<td class="' . $negativeClass . '">' . $obj->reel . '</td>';
-			print '<td>' . $obj->seuil_stock_alerte . '</td>';
+			print '<td class="center"><input type="checkbox" name="select_product[]" class="checkforselect" value="' . $product_data['rowid'] . '"></td>';
+			print '<td><a href="' . DOL_URL_ROOT . '/product/card.php?id=' . $product_data['rowid'] . '">' . dol_escape_htmltag($product_data['ref']) . '</a></td>';
+			print '<td>' . dol_escape_htmltag($product_data['label']) . '</td>';
+			print '<td>' . dol_escape_htmltag($product_data['entrepot_ref'] . ($product_data['entrepot_lieu'] ? ' - ' . $product_data['entrepot_lieu'] : '')) . '</td>';
+			print '<td>' . dol_escape_htmltag($product_data['fournisseur_nom']) . '</td>';
+			print '<td class="' . $negativeClass . '" title="Stock physique: ' . $product_data['stock_reel'] . ' | Stock virtuel: ' . $product_data['stock_virtuel'] . '">' . $product_data['stock_virtuel'] . '</td>';
+			print '<td>' . $product_data['seuil_stock_alerte'] . '</td>';
 			print '</tr>';
 		}
 
@@ -454,3 +305,64 @@ if ($resql) {
 
 llxFooter();
 $db->close();
+
+
+
+
+
+
+
+// require '../../main.inc.php';
+// require_once DOL_DOCUMENT_ROOT . '/core/lib/admin.lib.php';
+// require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
+
+// $langs->load("products");
+
+// llxHeader("", "Alertes de stock virtuel");
+
+// print load_fiche_titre("Produits avec alerte de stock virtuel");
+
+// $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "product";
+// $sql .= " WHERE entity = " . (int) $conf->entity;
+// $sql .= " AND fk_product_type = 0"; // Produits uniquement (pas services)
+
+// $resql = $db->query($sql);
+
+// if ($resql) {
+// 	print '<table class="liste centpercent">';
+// 	print '<tr class="liste_titre">';
+// 	print '<th>Réf</th>
+// 		<th>Nom</th>
+// 		<th>Stock réel</th>
+// 		<th>Stock virtuel</th>
+// 		<th>Seuil alerte</th>
+// 		<th></th>';
+// 	print '
+// 		</tr>';
+
+// 	while ($obj = $db->fetch_object($resql)) {
+// 		$product = new Product($db);
+// 		if ($product->fetch($obj->rowid) > 0) {
+// 			$product->load_stock(); // stock réel
+// 			$product->load_virtual_stock(); // stock virtuel
+
+// 			if ($product->stock_theorique < $product->seuil_stock_alerte) {
+// 				print '<tr>';
+// 				print '<td>' . $product->ref . '</td>';
+// 				print '<td>' . $product->label . '</td>';
+// 				print '<td>' . $product->stock_reel . '</td>';
+// 				print '<td>' . $product->stock_theorique . '</td>';
+// 				print '<td>' . $product->seuil_stock_alerte . '</td>';
+// 				print '<td><a href="' . DOL_URL_ROOT . '/product/card.php?id=' . $product->id . '">Voir</a></td>';
+// 				print '</tr>';
+// 			}
+// 		}
+// 	}
+
+// 	print '</table>';
+// } else {
+// 	print "Erreur SQL : " . $db->lasterror();
+// }
+
+// llxFooter();
+// $db->close();

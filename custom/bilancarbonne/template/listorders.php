@@ -393,7 +393,7 @@ $resultsPerPageOptions = [10, 25, 50, 100];
 		progressText.textContent = '0%';
 
 		// Lancer le script de calcul en arrière-plan
-		fetch('htdocs/custom/bilancarbone/controller/background/calculate_all_orders.php?year=2024')
+		fetch('htdocs/custom/bilancarbonne/controller/background/calculate_all_orders.php?year=2024')
 			.then(response => response.json())
 			.then(data => {
 				if (!data.success) {
@@ -422,46 +422,7 @@ $resultsPerPageOptions = [10, 25, 50, 100];
 			.catch(error => console.error('Erreur lors du lancement du calcul:', error));
 	});
 
-	// function calculateDistance(orderId, clientAddress, supplierAddress, transitAddress, emissionFactor) {
-	// 	return new Promise((resolve, reject) => {
-	// 		console.log('Envoi des paramètres pour le calcul :', {
-	// 			orderId,
-	// 			clientAddress,
-	// 			supplierAddress,
-	// 			transitAddress,
-	// 			emissionFactor
-	// 		});
 
-	// 		fetch('ordersController.php', {
-	// 				method: 'POST',
-	// 				headers: {
-	// 					'Content-Type': 'application/x-www-form-urlencoded'
-	// 				},
-	// 				body: new URLSearchParams({
-	// 					action: 'calculate_distance',
-	// 					order_id: orderId,
-	// 					client_address: clientAddress,
-	// 					supplier_address: supplierAddress,
-	// 					transit_address: transitAddress,
-	// 					emission_factor: emissionFactor
-	// 				})
-	// 			})
-	// 			.then(response => {
-	// 				if (!response.ok) {
-	// 					throw new Error(`Erreur HTTP ${response.status} : ${response.statusText}`);
-	// 				}
-	// 				return response.json();
-	// 			})
-	// 			.then(data => {
-	// 				// console.log(`Réponse du serveur pour la commande ${orderId} :`, data);
-	// 				resolve(data);
-	// 			})
-	// 			.catch(error => {
-	// 				console.error(`Erreur lors de la requête pour la commande ${orderId}:`, error);
-	// 				reject(error);
-	// 			});
-	// 	});
-	// }
 	function calculateDistance(orderId, clientAddress, supplierAddress, transitAddress, emissionFactor) {
 		console.log('Calcul avec nouveau facteur:', emissionFactor);
 
@@ -491,147 +452,6 @@ $resultsPerPageOptions = [10, 25, 50, 100];
 				throw error;
 			});
 	}
-	// // ✅ Vérification : Recalcul des valeurs
-	// function recalculateAll(emissionFactor) {
-	// 	console.log("🔄 Lancement de `recalculateAll()` avec le facteur :", emissionFactor);
-
-	// 	const orders = document.querySelectorAll('[data-order-id]');
-	// 	if (orders.length === 0) {
-	// 		console.log("❌ Aucun élément trouvé pour recalculer !");
-	// 		return;
-	// 	}
-
-	// 	orders.forEach(order => {
-	// 		console.log("🔍 Recalcul de la commande :", order.dataset.orderId);
-
-	// 		const orderId = order.dataset.orderId;
-	// 		const rowIndex = order.dataset.rowIndex;
-
-	// 		// Récupérer les cellules de distance et CO2
-	// 		const distanceCell = document.getElementById(`distance_${orderId}_${rowIndex}`);
-	// 		const co2Cell = document.getElementById(`co2_${orderId}_${rowIndex}`);
-
-	// 		if (!distanceCell || !co2Cell) {
-	// 			console.error(`⚠️ Impossible de trouver les cellules distance et CO₂ pour la commande ${orderId}`);
-	// 			return;
-	// 		}
-
-	// 		// Recalcul
-	// 		calculateDistance(
-	// 				orderId,
-	// 				order.dataset.clientAddress,
-	// 				order.dataset.supplierAddress,
-	// 				order.dataset.transitAddress,
-	// 				emissionFactor
-	// 			)
-	// 			.then(data => {
-	// 				if (data.success) {
-	// 					console.log(`✅ Mise à jour pour la commande ${orderId} : Distance = ${data.distance}, CO2 = ${data.co2}`);
-	// 					distanceCell.textContent = `${parseFloat(data.distance).toFixed(2)} km`;
-	// 					co2Cell.textContent = `${parseFloat(data.co2).toFixed(2)} kg CO₂`;
-	// 				} else {
-	// 					console.error(`❌ Erreur sur la commande ${orderId}:`, data);
-	// 				}
-	// 			})
-	// 			.catch(error => {
-	// 				console.error(`❌ Erreur lors du recalcul de la commande ${orderId}:`, error);
-	// 			});
-	// 	});
-	// }
-	// document.addEventListener('DOMContentLoaded', function() {
-	// 	const factorText = document.getElementById('global_emission_factor_text');
-	// 	const factorInput = document.getElementById('global_emission_factor_input');
-	// 	const editButton = document.getElementById('edit_emission_factor');
-	// 	const saveButton = document.getElementById('save_emission_factor');
-
-	// 	// Événement pour le bouton Modifier
-	// 	editButton.addEventListener('click', function() {
-	// 		factorText.style.display = 'none';
-	// 		factorInput.style.display = 'inline-block';
-	// 		saveButton.style.display = 'inline-block';
-	// 		editButton.style.display = 'none';
-	// 		factorInput.focus();
-	// 	});
-
-	// 	// Événement pour le bouton Sauvegarder
-	// 	saveButton.addEventListener('click', function() {
-	// 		const newFactor = parseFloat(factorInput.value);
-
-	// 		if (!isNaN(newFactor) && newFactor > 0) {
-	// 			// Récupérer toutes les cellules qui contiennent des données
-	// 			const cells = document.querySelectorAll('[data-order-id]');
-
-	// 			// Stocker la nouvelle valeur et masquer l'input
-	// 			factorText.textContent = newFactor.toFixed(1);
-	// 			factorInput.style.display = 'none';
-	// 			saveButton.style.display = 'none';
-	// 			factorText.style.display = 'inline-block';
-	// 			editButton.style.display = 'inline-block';
-
-	// 			// Mettre à jour le facteur d'émission côté serveur
-	// 			fetch('ordersController.php', {
-	// 					method: 'POST',
-	// 					headers: {
-	// 						'Content-Type': 'application/x-www-form-urlencoded',
-	// 					},
-	// 					body: new URLSearchParams({
-	// 						'action': 'update_emission_factor',
-	// 						'emission_factor': newFactor
-	// 					})
-	// 				}).then(response => response.json())
-	// 				.then(() => {
-	// 					// Pour chaque cellule, recalculer avec la nouvelle valeur
-	// 					cells.forEach(cell => {
-	// 						const orderId = cell.dataset.orderId;
-	// 						const rowIndex = cell.dataset.rowIndex;
-	// 						const distanceCell = document.getElementById(`distance_${orderId}_${rowIndex}`);
-	// 						const co2Cell = document.getElementById(`co2_${orderId}_${rowIndex}`);
-
-	// 						// Réinitialiser les cellules en mode "calcul en cours"
-	// 						distanceCell.textContent = 'Recalcul...';
-	// 						co2Cell.textContent = 'Recalcul...';
-	// 						distanceCell.className = 'calculating';
-	// 						co2Cell.className = 'calculating';
-
-	// 						// Lancer le nouveau calcul
-	// 						calculateDistance(
-	// 								orderId,
-	// 								cell.dataset.clientAddress,
-	// 								cell.dataset.supplierAddress,
-	// 								cell.dataset.transitAddress,
-	// 								newFactor
-	// 							)
-	// 							.then(data => {
-	// 								if (data.success) {
-	// 									const distanceValue = parseFloat(data.distance);
-	// 									const co2Value = parseFloat(data.co2);
-
-	// 									distanceCell.textContent = `${distanceValue.toFixed(2)} km`;
-	// 									co2Cell.textContent = `${co2Value.toFixed(2)} kg CO₂`;
-
-	// 									distanceCell.className = 'success distance';
-	// 									co2Cell.className = 'success co2';
-	// 								} else {
-	// 									distanceCell.textContent = 'Erreur de recalcul';
-	// 									co2Cell.textContent = 'Erreur de recalcul';
-	// 									distanceCell.className = 'error';
-	// 									co2Cell.className = 'error';
-	// 								}
-	// 							})
-	// 							.catch(error => {
-	// 								console.error('Erreur lors du recalcul:', error);
-	// 								distanceCell.textContent = 'Erreur de recalcul';
-	// 								co2Cell.textContent = 'Erreur de recalcul';
-	// 								distanceCell.className = 'error';
-	// 								co2Cell.className = 'error';
-	// 							});
-	// 					});
-	// 				});
-	// 		} else {
-	// 			alert("Veuillez entrer un facteur d'émission valide (nombre positif).");
-	// 		}
-	// 	});
-	// });
 
 	document.addEventListener('DOMContentLoaded', function() {
 		const factorText = document.getElementById('global_emission_factor_text');
