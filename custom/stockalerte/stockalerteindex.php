@@ -173,6 +173,7 @@ if ($show_all) {
 		$sql .= " AND ps.fk_entrepot = " . (int)$fk_entrepot;
 	}
 
+
 	if ($fk_fournisseur > 0) {
 		// Ici on s’assure que le produit est bien lié au fournisseur sélectionné
 		$sql .= " AND EXISTS (
