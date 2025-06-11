@@ -24,6 +24,7 @@
  *	\brief      Home page of stockalerte top menu
  */
 
+
 require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT . '/core/class/html.formfile.class.php';
 require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
@@ -40,7 +41,6 @@ $fk_fournisseur = GETPOST('fk_fournisseur', 'int');
 $show_all = GETPOST('show_all', 'int');
 $selected_products = GETPOST('select_product', 'array');
 
-// Création de la commande fournisseur
 if ($action == 'create_order' && $fk_fournisseur && !empty($selected_products)) {
 	$db->begin();
 	$order = new CommandeFournisseur($db);
@@ -52,12 +52,12 @@ if ($action == 'create_order' && $fk_fournisseur && !empty($selected_products)) 
 
 	if ($order_id > 0) {
 		foreach ($selected_products as $product_id) {
-			$sql = "SELECT p.rowid, p.ref, pfp.price, pe.conditionnementpalette as cond_pal"
-				. " FROM " . MAIN_DB_PREFIX . "product as p"
-				. " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid AND pfp.fk_soc = " . ((int) $fk_fournisseur)
-				. " LEFT JOIN " . MAIN_DB_PREFIX . "product_extrafields as pe ON pe.fk_object = p.rowid"
-				. " WHERE p.rowid = " . ((int) $product_id)
-				. " ORDER BY pfp.quantity ASC LIMIT 1";
+			$sql = "SELECT p.rowid, p.ref, pfp.price, pe.conditionnementpalette as cond_pal
+                    FROM " . MAIN_DB_PREFIX . "product as p
+                    LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid AND pfp.fk_soc = " . ((int) $fk_fournisseur) . "
+                    LEFT JOIN " . MAIN_DB_PREFIX . "product_extrafields as pe ON pe.fk_object = p.rowid
+                    WHERE p.rowid = " . ((int) $product_id) . "
+                    ORDER BY pfp.quantity ASC LIMIT 1";
 
 			$resql = $db->query($sql);
 			if ($resql && ($obj = $db->fetch_object($resql))) {
@@ -81,16 +81,13 @@ if (!isset($_POST['search'])) {
 $form = new Form($db);
 $formproduct = new FormProduct($db);
 
-// Titre de la page
 $title = $show_all ? $langs->trans("Produits en stock") : $langs->trans("Produits en alerte de stock");
 llxHeader("", $title);
 print load_fiche_titre($title, '', 'product');
 
-// Légende pour les couleurs d'alerte
 print '<style>.stock-critical{color:#cc0000;font-weight:bold}.stock-warning{color:#cc7a00;font-weight:bold}.stock-negative{color:#b50000;font-weight:bold;}</style>';
 print '<div style="margin-bottom:10px;"><span style="margin-right:15px;"><span style="color:#cc0000;font-weight:bold;">■</span> ' . $langs->trans("Stock critique") . ' (< 50% du seuil)</span><span><span style="color:#cc7a00;font-weight:bold;">■</span> ' . $langs->trans("Stock en alerte") . ' (≥ 50% du seuil)</span></div>';
 
-// Formulaire de filtrage
 print '<form method="POST">';
 print '<input type="hidden" name="token" value="' . newToken() . '">';
 print '<div class="inline-block">' . $langs->trans("Entrepôt") . ': ' . $formproduct->selectWarehouses($fk_entrepot, 'fk_entrepot', '', 1) . '</div> ';
@@ -98,6 +95,7 @@ print '<div class="inline-block">' . $langs->trans("Fournisseur") . ': ' . $form
 print '<div class="inline-block"><label><input type="checkbox" name="show_all" value="1" ' . ($show_all ? 'checked' : '') . '> ' . $langs->trans("Afficher tous les produits") . '</label></div> ';
 print '<input type="submit" name="search" class="button" value="' . $langs->trans("Filtrer") . '">';
 print '</form><br>';
+
 
 /**
  * Fonction pour calculer le stock virtuel d'un produit
