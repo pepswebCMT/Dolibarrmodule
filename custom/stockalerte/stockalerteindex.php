@@ -104,48 +104,55 @@ print '</form><br>';
  * @param object $db Connexion à la base de données
  * @return float Stock virtuel
  */
-function calculateVirtualStock($product_id, $warehouse_id, $db)
+function calculateVirtualStockDetails($product_id, $db)
 {
-	// Stock physique
-	$sql_stock = "SELECT SUM(ps.reel) as stock_reel FROM " . MAIN_DB_PREFIX . "product_stock as ps WHERE ps.fk_product = " . ((int) $product_id);
-	if ($warehouse_id > 0) {
-		$sql_stock .= " AND ps.fk_entrepot = " . ((int) $warehouse_id);
+	$stocks = [];
+	$stock_global = 0;
+
+	// 1. Stock physique par entrepôt
+	$sql_stock = "SELECT fk_entrepot, SUM(reel) as stock_reel
+                  FROM " . MAIN_DB_PREFIX . "product_stock
+                  WHERE fk_product = " . ((int)$product_id) . "
+                  GROUP BY fk_entrepot";
+	$res_stock = $db->query($sql_stock);
+
+	if ($res_stock) {
+		while ($obj = $db->fetch_object($res_stock)) {
+			$stocks[(int)$obj->fk_entrepot] = [
+				'stock_reel' => (float)$obj->stock_reel,
+				'stock_virtuel' => 0,
+			];
+		}
 	}
 
-	$resql_stock = $db->query($sql_stock);
-	$stock_reel = 0;
-	if ($resql_stock && ($obj = $db->fetch_object($resql_stock))) {
-		$stock_reel = (float) $obj->stock_reel;
-	}
-
-	// Commandes clients en cours (à déduire)
-	$sql_cmd_client = "SELECT SUM(cd.qty) as qty_cmd_client 
+	// 2. Commandes clients (à déduire)
+	$sql_cmd_client = "SELECT SUM(cd.qty) as qty_cmd_client
                        FROM " . MAIN_DB_PREFIX . "commandedet as cd
                        INNER JOIN " . MAIN_DB_PREFIX . "commande as c ON c.rowid = cd.fk_commande
-                       WHERE cd.fk_product = " . ((int) $product_id) . " AND c.fk_statut IN (1, 2)";
+                       WHERE cd.fk_product = " . ((int)$product_id) . "
+                       AND c.fk_statut IN (1,2)";
+	$res_client = $db->query($sql_cmd_client);
+	$qty_client = ($res_client && ($obj = $db->fetch_object($res_client))) ? (float)$obj->qty_cmd_client : 0;
 
-	$resql_cmd_client = $db->query($sql_cmd_client);
-	$qty_cmd_client = 0;
-	if ($resql_cmd_client && ($obj = $db->fetch_object($resql_cmd_client))) {
-		$qty_cmd_client = (float) $obj->qty_cmd_client;
+	// 3. Commandes fournisseurs (à ajouter)
+	$sql_cmd_fourn = "SELECT SUM(cfd.qty) as qty_cmd_fourn
+                      FROM " . MAIN_DB_PREFIX . "commande_fournisseurdet as cfd
+                      INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur as cf ON cf.rowid = cfd.fk_commande
+                      WHERE cfd.fk_product = " . ((int)$product_id) . "
+                      AND cf.fk_statut IN (3,4)";
+	$res_fourn = $db->query($sql_cmd_fourn);
+	$qty_fourn = ($res_fourn && ($obj = $db->fetch_object($res_fourn))) ? (float)$obj->qty_cmd_fourn : 0;
+
+	// 4. Calcul du stock virtuel par entrepôt
+	foreach ($stocks as $id_entrepot => &$data) {
+		$data['stock_virtuel'] = $data['stock_reel'] - $qty_client + $qty_fourn;
+		$stock_global += $data['stock_virtuel'];
 	}
 
-	// Commandes fournisseurs en cours (à ajouter)
-	$sql_cmd_fournisseur = "SELECT SUM(cfd.qty) as qty_cmd_fournisseur 
-                            FROM " . MAIN_DB_PREFIX . "commande_fournisseurdet as cfd
-                            INNER JOIN " . MAIN_DB_PREFIX . "commande_fournisseur as cf ON cf.rowid = cfd.fk_commande
-                            WHERE cfd.fk_product = " . ((int) $product_id) . " AND cf.fk_statut IN (3, 4)";
-
-	$resql_cmd_fournisseur = $db->query($sql_cmd_fournisseur);
-	$qty_cmd_fournisseur = 0;
-	if ($resql_cmd_fournisseur && ($obj = $db->fetch_object($resql_cmd_fournisseur))) {
-		$qty_cmd_fournisseur = (float) $obj->qty_cmd_fournisseur;
-	}
-
-	// Calcul du stock virtuel
-	$stock_virtuel = $stock_reel - $qty_cmd_client + $qty_cmd_fournisseur;
-
-	return $stock_virtuel;
+	return [
+		'global' => $stock_global,
+		'by_warehouse' => $stocks,
+	];
 }
 
 // Construction de la requête SQL simplifiée
@@ -171,21 +178,18 @@ if ($show_all) {
 		$sql .= " AND ps.fk_entrepot = " . (int)$fk_entrepot;
 	}
 
-
 	if ($fk_fournisseur > 0) {
-		// Ici on s’assure que le produit est bien lié au fournisseur sélectionné
-		$sql .= " AND EXISTS (
-        SELECT 1 FROM " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp2
-        WHERE pfp2.fk_product = p.rowid AND pfp2.fk_soc = " . (int)$fk_fournisseur . "
-    )";
+		$sql .= " AND pfp.fk_soc = " . (int)$fk_fournisseur;
 	}
+
 
 	$sql .= " GROUP BY p.rowid";
 	$sql .= " ORDER BY p.ref ASC";
 } else {
 	// Si on n'affiche que les produits en alerte
 	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
-	$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid";
+
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON e.rowid = ps.fk_entrepot";
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid";
 	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
@@ -197,11 +201,15 @@ if ($show_all) {
 	}
 
 	if ($fk_fournisseur > 0) {
-		$sql .= " AND pfp.fk_soc = " . $fk_fournisseur;
+		$sql .= " AND EXISTS (
+		SELECT 1 FROM " . MAIN_DB_PREFIX . "product_fournisseur_price as subpfp
+		WHERE subpfp.fk_product = p.rowid AND subpfp.fk_soc = " . $fk_fournisseur . "
+	)";
 	}
 }
 
-$sql .= " GROUP BY p.rowid, ps.rowid";
+$sql .= " GROUP BY p.rowid";
+
 $sql .= " ORDER BY p.ref ASC";
 
 // Exécution de la requête et affichage des résultats
@@ -214,14 +222,24 @@ if ($resql) {
 
 	while ($obj = $db->fetch_object($resql)) {
 		// Calculer le stock virtuel
-		$stock_virtuel = calculateVirtualStock($obj->rowid, $fk_entrepot, $db);
+		$stock_details = calculateVirtualStockDetails($obj->rowid, $db);
+		$stock_virtuel = ($fk_entrepot > 0 && isset($stock_details['by_warehouse'][$fk_entrepot]))
+			? $stock_details['by_warehouse'][$fk_entrepot]['stock_virtuel']
+			: $stock_details['global'];
 
 		// Si on n'affiche que les alertes, filtrer selon le stock virtuel
+		// Ne pas afficher les produits dont le stock virtuel total dépasse le seuil
 		if (!$show_all && $obj->seuil_stock_alerte !== null) {
 			if ($stock_virtuel > $obj->seuil_stock_alerte) {
-				continue; // Ignorer ce produit car il n'est pas en alerte
+				continue; // produit pas en alerte
+			}
+
+			// Exclure aussi seuil=0 et stock=0
+			if ((float)$stock_virtuel === 0.0 && (float)$obj->seuil_stock_alerte === 0.0) {
+				continue;
 			}
 		}
+
 
 		// Ajouter les données du produit au tableau
 		$products_data[] = array(

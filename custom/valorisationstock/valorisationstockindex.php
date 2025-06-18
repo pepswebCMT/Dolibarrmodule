@@ -64,6 +64,7 @@ require_once DOL_DOCUMENT_ROOT . '/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
 require_once DOL_DOCUMENT_ROOT . '/product/stock/class/entrepot.class.php';
 require_once DOL_DOCUMENT_ROOT . '/product/class/html.formproduct.class.php';
+require_once DOL_DOCUMENT_ROOT . '/core/lib/files.lib.php';
 
 // Load translation files required by the page
 $langs->loadLangs(array("valorisationstock@valorisationstock", "products", "stocks"));
@@ -74,7 +75,7 @@ $search_label = GETPOST('search_label', 'alpha');
 $search_warehouse = GETPOST('search_warehouse', 'int');
 $search_date = dol_mktime(0, 0, 0, GETPOST('search_datemonth', 'int'), GETPOST('search_dateday', 'int'), GETPOST('search_dateyear', 'int'));
 
-$limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : 250;
+$limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : 500;
 $sortfield = GETPOST('sortfield', 'aZ09comma');
 $sortorder = GETPOST('sortorder', 'aZ09comma');
 $page = GETPOSTISSET('pageplusone') ? (GETPOST('pageplusone') - 1) : GETPOST("page", 'int');
@@ -90,7 +91,7 @@ $param = '';
 if ($search_ref) $param .= '&search_ref=' . urlencode($search_ref);
 if ($search_label) $param .= '&search_label=' . urlencode($search_label);
 if ($search_warehouse > 0) $param .= '&search_warehouse=' . (int)$search_warehouse;
-if ($limit != 250) $param .= '&limit=' . (int)$limit;
+if ($limit != 500) $param .= '&limit=' . (int)$limit;
 // IMPORTANT : ajouter les paramètres de date pour qu'ils soient préservés lors du tri
 if (GETPOST('search_dateday', 'int')) $param .= '&search_dateday=' . (int)GETPOST('search_dateday', 'int');
 if (GETPOST('search_datemonth', 'int')) $param .= '&search_datemonth=' . (int)GETPOST('search_datemonth', 'int');
@@ -129,6 +130,258 @@ function getLastSupplierInvoicePrice($db, $product_id)
 	return 0;
 }
 
+/**
+ * Fonction pour obtenir les données de valorisation
+ * @param object $db Database handler
+ * @param string $search_ref Référence produit
+ * @param string $search_label Libellé produit
+ * @param int $search_warehouse ID entrepôt
+ * @param int $search_date Date de valorisation
+ * @param int $limit Limite d'enregistrements
+ * @param int $offset Offset pour pagination
+ * @param string $sortfield Champ de tri
+ * @param string $sortorder Ordre de tri
+ * @return array Tableau des données
+ */
+function getValorisationData($db, $search_ref, $search_label, $search_warehouse, $search_date, $limit = 0, $offset = 0, $sortfield = '', $sortorder = '')
+{
+	// Requête pour récupérer les données
+	$sql = "SELECT DISTINCT p.rowid, p.ref, p.label, p.price, p.price_ttc, p.tva_tx,";
+	$sql .= " ps.fk_entrepot as warehouse_id, ps.reel as stock_reel,";
+	$sql .= " e.ref as warehouse_label";
+	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON p.rowid = ps.fk_product";
+	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON ps.fk_entrepot = e.rowid";
+	$sql .= " WHERE p.entity IN (" . getEntity('product') . ")";
+	$sql .= " AND p.fk_product_type = 0"; // Produits uniquement (pas services)
+	$sql .= " AND ps.fk_entrepot IS NOT NULL"; // Seulement les produits qui ont des stocks
+
+	// Filtres
+	if ($search_ref) {
+		$sql .= " AND p.ref LIKE '%" . addslashes($search_ref) . "%'";
+	}
+	if ($search_label) {
+		$sql .= " AND p.label LIKE '%" . addslashes($search_label) . "%'";
+	}
+	if ($search_warehouse > 0) {
+		$sql .= " AND ps.fk_entrepot = " . ((int) $search_warehouse);
+	}
+
+	// Limite 
+	if (!empty($limit)) {
+		$sql .= $db->plimit($limit + 1, $offset);
+	}
+
+	$resql = $db->query($sql);
+	if (!$resql) {
+		return array();
+	}
+
+	$num = $db->num_rows($resql);
+	$i = 0;
+	$arrayofvalues = array();
+
+	while ($i < $num) {
+		$obj = $db->fetch_object($resql);
+
+		// Stock actuel depuis product_stock
+		$stock_actuel = $obj->stock_reel ? $obj->stock_reel : 0;
+
+		// Calculer le stock à la date donnée
+		$stock_date = $stock_actuel; // Par défaut = stock actuel
+
+		if (!empty($search_date) && $obj->warehouse_id) {
+			// Calcul basé sur les mouvements de stock
+			$sql_movements_after = "SELECT SUM(sm.value) as movements_after";
+			$sql_movements_after .= " FROM " . MAIN_DB_PREFIX . "stock_mouvement as sm";
+			$sql_movements_after .= " WHERE sm.fk_product = " . ((int) $obj->rowid);
+			$sql_movements_after .= " AND sm.fk_entrepot = " . ((int) $obj->warehouse_id);
+			$sql_movements_after .= " AND sm.datem > '" . $db->idate($search_date) . "'";
+
+			$resql_movements = $db->query($sql_movements_after);
+			if ($resql_movements) {
+				$obj_movements = $db->fetch_object($resql_movements);
+				$movements_after_date = $obj_movements->movements_after ? $obj_movements->movements_after : 0;
+				$stock_date = $stock_actuel - $movements_after_date;
+				$db->free($resql_movements);
+			} else {
+				$stock_date = 0;
+			}
+
+			// S'assurer que le stock n'est jamais négatif
+			if ($stock_date < 0) {
+				$stock_date = 0;
+			}
+		}
+
+		// Récupérer le prix unitaire de la dernière facture fournisseur
+		$supplier_unit_price = getLastSupplierInvoicePrice($db, $obj->rowid);
+
+		// Si aucun prix fournisseur trouvé, utiliser le prix de vente du produit
+		if ($supplier_unit_price == 0) {
+			$supplier_unit_price = $obj->price ? $obj->price : 0;
+		}
+
+		// Calculer la valorisation avec le prix fournisseur
+		$valuation = $supplier_unit_price * $stock_date;
+
+		// Stocker les données avec la valorisation pour le tri
+		$arrayofvalues[] = array(
+			'obj' => $obj,
+			'stock_date' => $stock_date,
+			'stock_actuel' => $stock_actuel,
+			'supplier_unit_price' => $supplier_unit_price,
+			'valuation' => $valuation
+		);
+
+		$i++;
+	}
+
+	// Appliquer le tri selon le champ demandé
+	if (!empty($sortfield)) {
+		switch ($sortfield) {
+			case 'p.ref':
+				usort($arrayofvalues, function ($a, $b) use ($sortorder) {
+					$result = strcmp($a['obj']->ref, $b['obj']->ref);
+					return ($sortorder === 'DESC') ? -$result : $result;
+				});
+				break;
+			case 'p.label':
+				usort($arrayofvalues, function ($a, $b) use ($sortorder) {
+					$result = strcmp($a['obj']->label, $b['obj']->label);
+					return ($sortorder === 'DESC') ? -$result : $result;
+				});
+				break;
+			case 'stock_actuel':
+				usort($arrayofvalues, function ($a, $b) use ($sortorder) {
+					$result = $a['stock_actuel'] <=> $b['stock_actuel'];
+					return ($sortorder === 'DESC') ? -$result : $result;
+				});
+				break;
+			case 'supplier_price':
+				usort($arrayofvalues, function ($a, $b) use ($sortorder) {
+					$result = $a['supplier_unit_price'] <=> $b['supplier_unit_price'];
+					return ($sortorder === 'DESC') ? -$result : $result;
+				});
+				break;
+			case 'valuation':
+				usort($arrayofvalues, function ($a, $b) use ($sortorder) {
+					$result = $a['valuation'] <=> $b['valuation'];
+					return ($sortorder === 'DESC') ? -$result : $result;
+				});
+				break;
+			default:
+				// Tri par valorisation décroissante par défaut
+				usort($arrayofvalues, function ($a, $b) {
+					return $b['valuation'] <=> $a['valuation'];
+				});
+				break;
+		}
+	} else {
+		// Trier par valorisation décroissante par défaut
+		usort($arrayofvalues, function ($a, $b) {
+			return $b['valuation'] <=> $a['valuation'];
+		});
+	}
+
+	$db->free($resql);
+	return $arrayofvalues;
+}
+
+/**
+ * Fonction pour exporter en Excel
+ */
+function exportToExcel($db, $search_ref, $search_label, $search_warehouse, $search_date, $sortfield, $sortorder)
+{
+	global $langs, $conf;
+
+	// Récupérer toutes les données sans limite
+	$arrayofvalues = getValorisationData($db, $search_ref, $search_label, $search_warehouse, $search_date, 0, 0, $sortfield, $sortorder);
+
+	// Créer le nom du fichier avec la date
+	$filename = 'valorisation_stock_' . dol_print_date($search_date, '%Y%m%d');
+	if ($search_warehouse > 0) {
+		$warehousestatic = new Entrepot($db);
+		$warehousestatic->fetch($search_warehouse);
+		$filename .= '_' . dol_sanitizeFileName($warehousestatic->ref);
+	}
+	$filename .= '.xls';
+
+	// Headers pour le téléchargement
+	header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+	header('Content-Disposition: attachment; filename="' . $filename . '"');
+	header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+	header('Pragma: public');
+
+	// Commencer le contenu Excel
+	echo "\xEF\xBB\xBF"; // BOM UTF-8
+	echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+	echo '<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head>';
+	echo '<body>';
+	echo '<table border="1">';
+
+	// En-tête du rapport
+	echo '<tr><td colspan="6" style="font-weight:bold; font-size:16px; text-align:center;">';
+	echo $langs->trans("Valorisation Stock") . ' - ' . dol_print_date($search_date, '%d/%m/%Y');
+	echo '</td></tr>';
+
+	if ($search_warehouse > 0) {
+		$warehousestatic = new Entrepot($db);
+		$warehousestatic->fetch($search_warehouse);
+		echo '<tr><td colspan="6" style="font-weight:bold; text-align:center;">';
+		echo $langs->trans("Warehouse") . ': ' . $warehousestatic->ref;
+		echo '</td></tr>';
+	}
+
+	echo '<tr><td colspan="6"></td></tr>'; // Ligne vide
+
+	// En-têtes des colonnes
+	echo '<tr style="font-weight:bold; background-color:#f0f0f0;">';
+	echo '<td>' . $langs->trans("Ref") . '</td>';
+	echo '<td>' . $langs->trans("Label") . '</td>';
+	echo '<td>' . $langs->trans("Stock à date") . '</td>';
+	echo '<td>' . $langs->trans("Stock actuel") . '</td>';
+	echo '<td>' . $langs->trans("Dernier prix fournisseur") . '</td>';
+	echo '<td>' . $langs->trans("Valuation") . '</td>';
+	echo '</tr>';
+
+	// Données
+	$total_valuation = 0;
+	foreach ($arrayofvalues as $data) {
+		$obj = $data['obj'];
+		$stock_date = $data['stock_date'];
+		$stock_actuel = $data['stock_actuel'];
+		$supplier_unit_price = $data['supplier_unit_price'];
+		$valuation = $data['valuation'];
+
+		$total_valuation += $valuation;
+
+		echo '<tr>';
+		echo '<td>' . htmlspecialchars($obj->ref) . '</td>';
+		echo '<td>' . htmlspecialchars($obj->label) . '</td>';
+		echo '<td style="text-align:center;">' . $stock_date . '</td>';
+		echo '<td style="text-align:center;">' . $stock_actuel . '</td>';
+		echo '<td style="text-align:right;">' . number_format($supplier_unit_price, 2, ',', ' ') . '</td>';
+		echo '<td style="text-align:right;">' . number_format($valuation, 2, ',', ' ') . '</td>';
+		echo '</tr>';
+	}
+
+	// Ligne de total
+	echo '<tr style="font-weight:bold; background-color:#e0e0e0;">';
+	echo '<td></td>';
+	echo '<td></td>';
+	echo '<td></td>';
+	echo '<td></td>';
+	echo '<td style="text-align:right;">' . $langs->trans("Total") . '</td>';
+	echo '<td style="text-align:right;">' . number_format($total_valuation, 2, ',', ' ') . '</td>';
+	echo '</tr>';
+
+	echo '</table>';
+	echo '</body></html>';
+
+	exit;
+}
+
 /*
  * Actions
  */
@@ -139,6 +392,11 @@ if (GETPOST('cancel', 'alpha')) {
 }
 if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massaction != 'confirm_presend') {
 	$massaction = '';
+}
+
+// Action d'export Excel
+if ($action == 'export_excel' && !empty($search_date)) {
+	exportToExcel($db, $search_ref, $search_label, $search_warehouse, $search_date, $sortfield, $sortorder);
 }
 
 /*
@@ -162,9 +420,6 @@ print '<div class="fichehalfleft">';
 
 print '<div class="div-table-responsive-no-min">';
 print '<table class="noborder centpercent">';
-print '<tr class="liste_titre">';
-print '<th colspan="2">' . $langs->trans("SearchFilters") . '</th>';
-print '</tr>';
 
 // Formulaire de recherche
 print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
@@ -236,6 +491,24 @@ if (GETPOST('button_removefilter', 'alpha')) {
 if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'search' || (!empty($search_ref) || !empty($search_label) || !empty($search_warehouse)))) {
 
 	print '<br><hr><br>';
+
+	// Bouton d'export Excel
+	print '<div class="tabsAction">';
+	print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '" style="display: inline;">';
+	print '<input type="hidden" name="token" value="' . newToken() . '">';
+	print '<input type="hidden" name="action" value="export_excel">';
+	print '<input type="hidden" name="search_ref" value="' . dol_escape_htmltag($search_ref) . '">';
+	print '<input type="hidden" name="search_label" value="' . dol_escape_htmltag($search_label) . '">';
+	print '<input type="hidden" name="search_warehouse" value="' . (int)$search_warehouse . '">';
+	print '<input type="hidden" name="search_dateday" value="' . (int)GETPOST('search_dateday', 'int') . '">';
+	print '<input type="hidden" name="search_datemonth" value="' . (int)GETPOST('search_datemonth', 'int') . '">';
+	print '<input type="hidden" name="search_dateyear" value="' . (int)GETPOST('search_dateyear', 'int') . '">';
+	print '<input type="hidden" name="sortfield" value="' . dol_escape_htmltag($sortfield) . '">';
+	print '<input type="hidden" name="sortorder" value="' . dol_escape_htmltag($sortorder) . '">';
+	print '<input type="submit" class="butAction" value="' . $langs->trans("Export Excel") . '">';
+	print '</form>';
+	print '</div>';
+
 	print '<div class="div-table-responsive-no-min">';
 	print '<table class="liste centpercent">';
 
@@ -250,227 +523,85 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 	print_liste_field_titre('', $_SERVER["PHP_SELF"], "", "", $param, "", $sortfield, $sortorder, 'center maxwidthsearch ');
 	print "</tr>\n";
 
-	// Requête pour récupérer les données
-	$sql = "SELECT DISTINCT p.rowid, p.ref, p.label, p.price, p.price_ttc, p.tva_tx,";
-	$sql .= " ps.fk_entrepot as warehouse_id, ps.reel as stock_reel,";
-	$sql .= " e.ref as warehouse_label";
-	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON p.rowid = ps.fk_product";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON ps.fk_entrepot = e.rowid";
-	$sql .= " WHERE p.entity IN (" . getEntity('product') . ")";
-	$sql .= " AND p.fk_product_type = 0"; // Produits uniquement (pas services)
-	$sql .= " AND ps.fk_entrepot IS NOT NULL"; // Seulement les produits qui ont des stocks
+	// Récupérer les données
+	$arrayofvalues = getValorisationData($db, $search_ref, $search_label, $search_warehouse, $search_date, $limit, $offset, $sortfield, $sortorder);
 
-	// Filtres
-	if ($search_ref) {
-		$sql .= " AND p.ref LIKE '%" . addslashes($search_ref) . "%'";
-	}
-	if ($search_label) {
-		$sql .= " AND p.label LIKE '%" . addslashes($search_label) . "%'";
-	}
-	if ($search_warehouse > 0) {
-		$sql .= " AND ps.fk_entrepot = " . ((int) $search_warehouse);
-	}
+	// Afficher les résultats
+	$total_valuation = 0;
+	foreach ($arrayofvalues as $data) {
+		$obj = $data['obj'];
+		$stock_date = $data['stock_date'];
+		$stock_actuel = $data['stock_actuel'];
+		$supplier_unit_price = $data['supplier_unit_price'];
+		$valuation = $data['valuation'];
 
-	// Limite 
-	if (!empty($limit)) {
-		$sql .= $db->plimit($limit + 1, $offset);
-	}
+		$total_valuation += $valuation;
 
-	$resql = $db->query($sql);
-	if ($resql) {
-		$num = $db->num_rows($resql);
-		$i = 0;
+		print '<tr class="oddeven">';
 
-		$arrayofvalues = array();
+		// Référence
+		$productstatic->id = $obj->rowid;
+		$productstatic->ref = $obj->ref;
+		$productstatic->label = $obj->label;
+		print '<td class="nowraponall">';
+		print $productstatic->getNomUrl(1);
+		print '</td>';
 
-		while ($i < $num) {
-			$obj = $db->fetch_object($resql);
+		// Libellé
+		print '<td class="tdoverflowmax200" title="' . dol_escape_htmltag($obj->label) . '">';
+		print dol_escape_htmltag($obj->label);
+		print '</td>';
 
-			// Stock actuel depuis product_stock
-			$stock_actuel = $obj->stock_reel ? $obj->stock_reel : 0;
+		// Stock à date
+		print '<td class="center">';
+		print $stock_date;
+		print '</td>';
 
-			// Calculer le stock à la date donnée
-			$stock_date = $stock_actuel; // Par défaut = stock actuel
+		// Stock actuel
+		print '<td class="center">';
+		print '<strong>' . $stock_actuel . '</strong>';
+		print '</td>';
 
-			if (!empty($search_date) && $obj->warehouse_id) {
-				// Calcul basé sur les mouvements de stock
-				$sql_movements_after = "SELECT SUM(sm.value) as movements_after";
-				$sql_movements_after .= " FROM " . MAIN_DB_PREFIX . "stock_mouvement as sm";
-				$sql_movements_after .= " WHERE sm.fk_product = " . ((int) $obj->rowid);
-				$sql_movements_after .= " AND sm.fk_entrepot = " . ((int) $obj->warehouse_id);
-				$sql_movements_after .= " AND sm.datem > '" . $db->idate($search_date) . "'";
-
-				$resql_movements = $db->query($sql_movements_after);
-				if ($resql_movements) {
-					$obj_movements = $db->fetch_object($resql_movements);
-					$movements_after_date = $obj_movements->movements_after ? $obj_movements->movements_after : 0;
-					$stock_date = $stock_actuel - $movements_after_date;
-					$db->free($resql_movements);
-				} else {
-					$stock_date = 0;
-				}
-
-				// S'assurer que le stock n'est jamais négatif
-				if ($stock_date < 0) {
-					$stock_date = 0;
-				}
-			}
-
-			// Récupérer le prix unitaire de la dernière facture fournisseur
-			$supplier_unit_price = getLastSupplierInvoicePrice($db, $obj->rowid);
-
-			// Si aucun prix fournisseur trouvé, utiliser le prix de vente du produit
-			if ($supplier_unit_price == 0) {
-				$supplier_unit_price = $obj->price ? $obj->price : 0;
-			}
-
-			// Calculer la valorisation avec le prix fournisseur
-			$valuation = $supplier_unit_price * $stock_date;
-
-			// Stocker les données avec la valorisation pour le tri
-			$arrayofvalues[] = array(
-				'obj' => $obj,
-				'stock_date' => $stock_date,
-				'stock_actuel' => $stock_actuel,
-				'supplier_unit_price' => $supplier_unit_price,
-				'valuation' => $valuation
-			);
-
-			$i++;
-		}
-
-		// Appliquer le tri selon le champ demandé
-		if (!empty($sortfield)) {
-			switch ($sortfield) {
-				case 'p.ref':
-					usort($arrayofvalues, function ($a, $b) use ($sortorder) {
-						$result = strcmp($a['obj']->ref, $b['obj']->ref);
-						return ($sortorder === 'DESC') ? -$result : $result;
-					});
-					break;
-				case 'p.label':
-					usort($arrayofvalues, function ($a, $b) use ($sortorder) {
-						$result = strcmp($a['obj']->label, $b['obj']->label);
-						return ($sortorder === 'DESC') ? -$result : $result;
-					});
-					break;
-				case 'e.libelle':
-					// Tri par entrepôt supprimé car colonne supprimée
-					break;
-				case 'stock_actuel':
-					usort($arrayofvalues, function ($a, $b) use ($sortorder) {
-						$result = $a['stock_actuel'] <=> $b['stock_actuel'];
-						return ($sortorder === 'DESC') ? -$result : $result;
-					});
-					break;
-				case 'supplier_price':
-					usort($arrayofvalues, function ($a, $b) use ($sortorder) {
-						$result = $a['supplier_unit_price'] <=> $b['supplier_unit_price'];
-						return ($sortorder === 'DESC') ? -$result : $result;
-					});
-					break;
-				case 'valuation':
-					usort($arrayofvalues, function ($a, $b) use ($sortorder) {
-						$result = $a['valuation'] <=> $b['valuation'];
-						return ($sortorder === 'DESC') ? -$result : $result;
-					});
-					break;
-				default:
-					// Tri par valorisation décroissante par défaut
-					usort($arrayofvalues, function ($a, $b) {
-						return $b['valuation'] <=> $a['valuation'];
-					});
-					break;
-			}
+		// Prix unitaire fournisseur
+		print '<td class="right">';
+		if ($supplier_unit_price > 0) {
+			print '<strong>' . price($supplier_unit_price) . '</strong>';
 		} else {
-			// Trier par valorisation décroissante par défaut
-			usort($arrayofvalues, function ($a, $b) {
-				return $b['valuation'] <=> $a['valuation'];
-			});
+			print '<span class="opacitymedium">' . $langs->trans("N/A") . '</span>';
 		}
+		print '</td>';
 
-		// Afficher les résultats
-		$total_valuation = 0;
-		foreach ($arrayofvalues as $data) {
-			$obj = $data['obj'];
-			$stock_date = $data['stock_date'];
-			$stock_actuel = $data['stock_actuel'];
-			$supplier_unit_price = $data['supplier_unit_price'];
-			$valuation = $data['valuation'];
-
-			$total_valuation += $valuation;
-
-			print '<tr class="oddeven">';
-
-			// Référence
-			$productstatic->id = $obj->rowid;
-			$productstatic->ref = $obj->ref;
-			$productstatic->label = $obj->label;
-			print '<td class="nowraponall">';
-			print $productstatic->getNomUrl(1);
-			print '</td>';
-
-			// Libellé
-			print '<td class="tdoverflowmax200" title="' . dol_escape_htmltag($obj->label) . '">';
-			print dol_escape_htmltag($obj->label);
-			print '</td>';
-
-			// Stock à date
-			print '<td class="center">';
-			print $stock_date;
-			print '</td>';
-
-			// Stock actuel
-			print '<td class="center">';
-			print '<strong>' . $stock_actuel . '</strong>';
-			print '</td>';
-
-			// Prix unitaire fournisseur
-			print '<td class="right">';
-			if ($supplier_unit_price > 0) {
-				print '<strong>' . price($supplier_unit_price) . '</strong>';
-			} else {
-				print '<span class="opacitymedium">' . $langs->trans("N/A") . '</span>';
-			}
-			print '</td>';
-
-			// Valorisation
-			print '<td class="right">';
-			if ($valuation > 0) {
-				print '<strong>' . price($valuation) . '</strong>';
-			} else {
-				print price($valuation);
-			}
-			print '</td>';
-
-			// Actions
-			print '<td class="center">';
-			print '</td>';
-
-			print "</tr>\n";
+		// Valorisation
+		print '<td class="right">';
+		if ($valuation > 0) {
+			print '<strong>' . price($valuation) . '</strong>';
+		} else {
+			print price($valuation);
 		}
+		print '</td>';
 
-		// Ligne de total
-		if (count($arrayofvalues) > 0) {
-			print '<tr class="liste_total">';
-			print '<td></td>';
-			print '<td></td>';
-			print '<td></td>';
-			print '<td></td>';
-			print '<td class="right"><strong>' . $langs->trans("Total") . '</strong></td>';
-			print '<td class="right"><strong>' . price($total_valuation) . '</strong></td>';
-			print '<td></td>';
-			print '</tr>';
-		}
+		// Actions
+		print '<td class="center">';
+		print '</td>';
 
-		if (count($arrayofvalues) == 0) {
-			print '<tr class="oddeven"><td colspan="7" class="opacitymedium">' . $langs->trans("NoRecordFound") . '</td></tr>';
-		}
+		print "</tr>\n";
+	}
 
-		$db->free($resql);
-	} else {
-		dol_print_error($db);
+	// Ligne de total
+	if (count($arrayofvalues) > 0) {
+		print '<tr class="liste_total">';
+		print '<td></td>';
+		print '<td></td>';
+		print '<td></td>';
+		print '<td></td>';
+		print '<td class="right"><strong>' . $langs->trans("Total") . '</strong></td>';
+		print '<td class="right"><strong>' . price($total_valuation) . '</strong></td>';
+		print '<td></td>';
+		print '</tr>';
+	}
+
+	if (count($arrayofvalues) == 0) {
+		print '<tr class="oddeven"><td colspan="7" class="opacitymedium">' . $langs->trans("NoRecordFound") . '</td></tr>';
 	}
 
 	print "</table>";
@@ -498,7 +629,7 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 	}
 
 	// Page suivante
-	if ($num > $limit) {
+	if (count($arrayofvalues) > $limit) {
 		print '<a class="button" href="' . $baseurl . '&page=' . $pagenext . '">Page suivante &raquo;</a>';
 	}
 
@@ -509,7 +640,7 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 	print '<br><div class="info clearboth">';
 	print '<div class="center">';
 	print '<span class="opacitymedium">';
-	print $langs->trans("Please select a date to display stock valuation results");
+	print $langs->trans("Veuillez sélectionner une date pour afficher les résultats de l'évaluation des stocks");
 	print '</span>';
 	print '</div>';
 	print '</div>';
@@ -562,6 +693,24 @@ print '<style>
     margin: 10px 0;
     border-radius: 4px;
 }
+
+.tabsAction {
+    margin-bottom: 15px;
+}
+
+.butAction {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    // padding: 8px 16px;
+   
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    // display: inline-block;
+}
+
+
 </style>';
 
 // End of page
