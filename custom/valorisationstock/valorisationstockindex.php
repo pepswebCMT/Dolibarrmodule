@@ -75,9 +75,10 @@ $search_label = GETPOST('search_label', 'alpha');
 $search_warehouse = GETPOST('search_warehouse', 'int');
 $search_date = dol_mktime(0, 0, 0, GETPOST('search_datemonth', 'int'), GETPOST('search_dateday', 'int'), GETPOST('search_dateyear', 'int'));
 
-$limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : 500;
+$limit = GETPOST('limit', 'int') ? GETPOST('limit', 'int') : 3000;
 $sortfield = GETPOST('sortfield', 'aZ09comma');
 $sortorder = GETPOST('sortorder', 'aZ09comma');
+
 $page = GETPOSTISSET('pageplusone') ? (GETPOST('pageplusone') - 1) : GETPOST("page", 'int');
 if (empty($page) || $page == -1) {
 	$page = 0;
@@ -92,6 +93,21 @@ if ($search_ref) $param .= '&search_ref=' . urlencode($search_ref);
 if ($search_label) $param .= '&search_label=' . urlencode($search_label);
 if ($search_warehouse > 0) $param .= '&search_warehouse=' . (int)$search_warehouse;
 if ($limit != 500) $param .= '&limit=' . (int)$limit;
+
+// Ajout correct de la date de valorisation
+if (!empty($search_date)) {
+	$param .= '&search_dateday=' . (int) dol_print_date($search_date, '%d');
+	$param .= '&search_datemonth=' . (int) dol_print_date($search_date, '%m');
+	$param .= '&search_dateyear=' . (int) dol_print_date($search_date, '%Y');
+}
+
+// Conserver le tri courant
+if ($sortfield) $param .= '&sortfield=' . urlencode($sortfield);
+if ($sortorder) $param .= '&sortorder=' . urlencode($sortorder);
+
+// Forcer l'affichage des résultats
+$param .= '&action=search';
+
 // IMPORTANT : ajouter les paramètres de date pour qu'ils soient préservés lors du tri
 if (GETPOST('search_dateday', 'int')) $param .= '&search_dateday=' . (int)GETPOST('search_dateday', 'int');
 if (GETPOST('search_datemonth', 'int')) $param .= '&search_datemonth=' . (int)GETPOST('search_datemonth', 'int');
@@ -145,16 +161,31 @@ function getLastSupplierInvoicePrice($db, $product_id)
  */
 function getValorisationData($db, $search_ref, $search_label, $search_warehouse, $search_date, $limit = 0, $offset = 0, $sortfield = '', $sortorder = '')
 {
-	// Requête pour récupérer les données
+	if ($search_warehouse > 0) {
+		// CAS 1: Entrepôt spécifique - logique actuelle
+		return getValorisationDataForWarehouse($db, $search_ref, $search_label, $search_warehouse, $search_date, $limit, $offset, $sortfield, $sortorder);
+	} else {
+		// CAS 2: Tous les entrepôts - agrégation par produit
+		return getValorisationDataAllWarehouses($db, $search_ref, $search_label, $search_date, $limit, $offset, $sortfield, $sortorder);
+	}
+}
+
+/**
+ * Données pour un entrepôt spécifique
+ */
+function getValorisationDataForWarehouse($db, $search_ref, $search_label, $search_warehouse, $search_date, $limit = 0, $offset = 0, $sortfield = '', $sortorder = '')
+{
+	// Requête pour récupérer les données d'un entrepôt spécifique
 	$sql = "SELECT DISTINCT p.rowid, p.ref, p.label, p.price, p.price_ttc, p.tva_tx,";
 	$sql .= " ps.fk_entrepot as warehouse_id, ps.reel as stock_reel,";
 	$sql .= " e.ref as warehouse_label";
 	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON p.rowid = ps.fk_product";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON ps.fk_entrepot = e.rowid";
+	$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON p.rowid = ps.fk_product";
+	$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "entrepot as e ON ps.fk_entrepot = e.rowid";
 	$sql .= " WHERE p.entity IN (" . getEntity('product') . ")";
-	$sql .= " AND p.fk_product_type = 0"; // Produits uniquement (pas services)
-	$sql .= " AND ps.fk_entrepot IS NOT NULL"; // Seulement les produits qui ont des stocks
+	$sql .= " AND p.fk_product_type = 0"; // Produits uniquement
+	$sql .= " AND ps.fk_entrepot = " . ((int) $search_warehouse);
+	$sql .= " AND ps.reel > 0"; // Stock réel positif
 
 	// Filtres
 	if ($search_ref) {
@@ -163,9 +194,35 @@ function getValorisationData($db, $search_ref, $search_label, $search_warehouse,
 	if ($search_label) {
 		$sql .= " AND p.label LIKE '%" . addslashes($search_label) . "%'";
 	}
-	if ($search_warehouse > 0) {
-		$sql .= " AND ps.fk_entrepot = " . ((int) $search_warehouse);
+
+	return executeValorisationQuery($db, $sql, $search_date, $limit, $offset, $sortfield, $sortorder);
+}
+
+/**
+ * Données agrégées pour tous les entrepôts
+ */
+function getValorisationDataAllWarehouses($db, $search_ref, $search_label, $search_date, $limit = 0, $offset = 0, $sortfield = '', $sortorder = '')
+{
+	// CORRECTION PRINCIPALE: Agrégation des stocks par produit
+	$sql = "SELECT p.rowid, p.ref, p.label, p.price, p.price_ttc, p.tva_tx,";
+	$sql .= " SUM(ps.reel) as stock_reel_total,"; // Somme des stocks de tous les entrepôts
+	$sql .= " GROUP_CONCAT(DISTINCT CONCAT(e.ref, ':', ps.reel) SEPARATOR '|') as warehouse_details";
+	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
+	$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON p.rowid = ps.fk_product";
+	$sql .= " INNER JOIN " . MAIN_DB_PREFIX . "entrepot as e ON ps.fk_entrepot = e.rowid";
+	$sql .= " WHERE p.entity IN (" . getEntity('product') . ")";
+	$sql .= " AND p.fk_product_type = 0"; // Produits uniquement
+
+	// Filtres
+	if ($search_ref) {
+		$sql .= " AND p.ref LIKE '%" . addslashes($search_ref) . "%'";
 	}
+	if ($search_label) {
+		$sql .= " AND p.label LIKE '%" . addslashes($search_label) . "%'";
+	}
+
+	$sql .= " GROUP BY p.rowid, p.ref, p.label, p.price, p.price_ttc, p.tva_tx";
+	$sql .= " HAVING SUM(ps.reel) > 0"; // CORRECTION: Ne garder que les produits avec stock total > 0
 
 	// Limite 
 	if (!empty($limit)) {
@@ -184,24 +241,32 @@ function getValorisationData($db, $search_ref, $search_label, $search_warehouse,
 	while ($i < $num) {
 		$obj = $db->fetch_object($resql);
 
-		// Stock actuel depuis product_stock
-		$stock_actuel = $obj->stock_reel ? $obj->stock_reel : 0;
+		// Stock actuel total (somme de tous les entrepôts)
+		$stock_actuel = $obj->stock_reel_total ? (float)$obj->stock_reel_total : 0;
 
-		// Calculer le stock à la date donnée
-		$stock_date = $stock_actuel; // Par défaut = stock actuel
+		// SÉCURITÉ : Si stock total est 0 ou négatif, on passe au suivant
+		if ($stock_actuel <= 0) {
+			$i++;
+			continue;
+		}
 
-		if (!empty($search_date) && $obj->warehouse_id) {
-			// Calcul basé sur les mouvements de stock
+		// Calculer le stock à la date donnée pour TOUS les entrepôts
+		$stock_date = $stock_actuel; // Par défaut = stock actuel total
+
+		if (!empty($search_date)) {
+			// Calcul des mouvements APRÈS la date pour TOUS les entrepôts du produit
 			$sql_movements_after = "SELECT SUM(sm.value) as movements_after";
 			$sql_movements_after .= " FROM " . MAIN_DB_PREFIX . "stock_mouvement as sm";
+			$sql_movements_after .= " INNER JOIN " . MAIN_DB_PREFIX . "product_stock as ps2 ON sm.fk_entrepot = ps2.fk_entrepot";
 			$sql_movements_after .= " WHERE sm.fk_product = " . ((int) $obj->rowid);
-			$sql_movements_after .= " AND sm.fk_entrepot = " . ((int) $obj->warehouse_id);
+			$sql_movements_after .= " AND ps2.fk_product = " . ((int) $obj->rowid);
 			$sql_movements_after .= " AND sm.datem > '" . $db->idate($search_date) . "'";
 
 			$resql_movements = $db->query($sql_movements_after);
 			if ($resql_movements) {
 				$obj_movements = $db->fetch_object($resql_movements);
-				$movements_after_date = $obj_movements->movements_after ? $obj_movements->movements_after : 0;
+				$movements_after_date = $obj_movements->movements_after ? (float)$obj_movements->movements_after : 0;
+				// Stock à la date = Stock actuel total - mouvements après la date
 				$stock_date = $stock_actuel - $movements_after_date;
 				$db->free($resql_movements);
 			} else {
@@ -214,30 +279,149 @@ function getValorisationData($db, $search_ref, $search_label, $search_warehouse,
 			}
 		}
 
+		// CORRECTION : Vérifier le stock calculé
+		if ($stock_date <= 0) {
+			$i++;
+			continue;
+		}
+
 		// Récupérer le prix unitaire de la dernière facture fournisseur
 		$supplier_unit_price = getLastSupplierInvoicePrice($db, $obj->rowid);
 
-		// Si aucun prix fournisseur trouvé, utiliser le prix de vente du produit
-		if ($supplier_unit_price == 0) {
-			$supplier_unit_price = $obj->price ? $obj->price : 0;
+		// Logique de fallback pour le prix
+		if (empty($supplier_unit_price) || $supplier_unit_price <= 0) {
+			if (!empty($obj->price) && $obj->price > 0) {
+				$supplier_unit_price = (float)$obj->price / 1.38;
+			} else {
+				// Si vraiment aucun prix disponible, on passe au produit suivant
+				$i++;
+				continue;
+			}
 		}
 
 		// Calculer la valorisation avec le prix fournisseur
 		$valuation = $supplier_unit_price * $stock_date;
 
-		// Stocker les données avec la valorisation pour le tri
-		$arrayofvalues[] = array(
-			'obj' => $obj,
-			'stock_date' => $stock_date,
-			'stock_actuel' => $stock_actuel,
-			'supplier_unit_price' => $supplier_unit_price,
-			'valuation' => $valuation
-		);
+		// SÉCURITÉ FINALE : Ne stocker que si valorisation > 0
+		if ($valuation > 0) {
+			// Créer un objet fictif pour la compatibilité
+			$fake_obj = new stdClass();
+			$fake_obj->rowid = $obj->rowid;
+			$fake_obj->ref = $obj->ref;
+			$fake_obj->label = $obj->label;
+			$fake_obj->price = $obj->price;
+			$fake_obj->warehouse_id = 0; // Tous les entrepôts
+			$fake_obj->warehouse_label = 'Tous entrepôts';
+
+			$arrayofvalues[] = array(
+				'obj' => $fake_obj,
+				'stock_date' => $stock_date,
+				'stock_actuel' => $stock_actuel,
+				'supplier_unit_price' => $supplier_unit_price,
+				'valuation' => $valuation,
+				'warehouse_details' => $obj->warehouse_details // Détail des entrepôts
+			);
+		}
 
 		$i++;
 	}
 
-	// Appliquer le tri selon le champ demandé
+	// Appliquer le tri
+	return applySorting($arrayofvalues, $sortfield, $sortorder);
+}
+
+/**
+ * Exécution de la requête pour un entrepôt spécifique
+ */
+function executeValorisationQuery($db, $sql, $search_date, $limit, $offset, $sortfield, $sortorder)
+{
+	if (!empty($limit)) {
+		$sql .= $db->plimit($limit + 1, $offset);
+	}
+
+	$resql = $db->query($sql);
+	if (!$resql) {
+		return array();
+	}
+
+	$num = $db->num_rows($resql);
+	$i = 0;
+	$arrayofvalues = array();
+
+	while ($i < $num) {
+		$obj = $db->fetch_object($resql);
+
+		$stock_actuel = $obj->stock_reel ? (float)$obj->stock_reel : 0;
+
+		if ($stock_actuel <= 0) {
+			$i++;
+			continue;
+		}
+
+		$stock_date = $stock_actuel;
+
+		if (!empty($search_date) && $obj->warehouse_id) {
+			$sql_movements_after = "SELECT SUM(sm.value) as movements_after";
+			$sql_movements_after .= " FROM " . MAIN_DB_PREFIX . "stock_mouvement as sm";
+			$sql_movements_after .= " WHERE sm.fk_product = " . ((int) $obj->rowid);
+			$sql_movements_after .= " AND sm.fk_entrepot = " . ((int) $obj->warehouse_id);
+			$sql_movements_after .= " AND sm.datem > '" . $db->idate($search_date) . "'";
+
+			$resql_movements = $db->query($sql_movements_after);
+			if ($resql_movements) {
+				$obj_movements = $db->fetch_object($resql_movements);
+				$movements_after_date = $obj_movements->movements_after ? (float)$obj_movements->movements_after : 0;
+				$stock_date = $stock_actuel - $movements_after_date;
+				$db->free($resql_movements);
+			} else {
+				$stock_date = 0;
+			}
+
+			if ($stock_date < 0) {
+				$stock_date = 0;
+			}
+		}
+
+		if ($stock_date <= 0) {
+			$i++;
+			continue;
+		}
+
+		$supplier_unit_price = getLastSupplierInvoicePrice($db, $obj->rowid);
+
+		if (empty($supplier_unit_price) || $supplier_unit_price <= 0) {
+			if (!empty($obj->price) && $obj->price > 0) {
+				$supplier_unit_price = (float)$obj->price / 1.38;
+			} else {
+				$i++;
+				continue;
+			}
+		}
+
+		$valuation = $supplier_unit_price * $stock_date;
+
+		if ($valuation > 0) {
+			$arrayofvalues[] = array(
+				'obj' => $obj,
+				'stock_date' => $stock_date,
+				'stock_actuel' => $stock_actuel,
+				'supplier_unit_price' => $supplier_unit_price,
+				'valuation' => $valuation
+			);
+		}
+
+		$i++;
+	}
+
+	$db->free($resql);
+	return applySorting($arrayofvalues, $sortfield, $sortorder);
+}
+
+/**
+ * Application du tri
+ */
+function applySorting($arrayofvalues, $sortfield, $sortorder)
+{
 	if (!empty($sortfield)) {
 		switch ($sortfield) {
 			case 'p.ref':
@@ -271,32 +455,28 @@ function getValorisationData($db, $search_ref, $search_label, $search_warehouse,
 				});
 				break;
 			default:
-				// Tri par valorisation décroissante par défaut
 				usort($arrayofvalues, function ($a, $b) {
 					return $b['valuation'] <=> $a['valuation'];
 				});
 				break;
 		}
 	} else {
-		// Trier par valorisation décroissante par défaut
 		usort($arrayofvalues, function ($a, $b) {
 			return $b['valuation'] <=> $a['valuation'];
 		});
 	}
 
-	$db->free($resql);
 	return $arrayofvalues;
 }
-
 /**
  * Fonction pour exporter en Excel
  */
-function exportToExcel($db, $search_ref, $search_label, $search_warehouse, $search_date, $sortfield, $sortorder)
+function exportToExcel($db, $search_ref, $search_label, $search_warehouse, $search_date, $sortfield, $sortorder, $limit, $offset)
 {
 	global $langs, $conf;
 
 	// Récupérer toutes les données sans limite
-	$arrayofvalues = getValorisationData($db, $search_ref, $search_label, $search_warehouse, $search_date, 0, 0, $sortfield, $sortorder);
+	$arrayofvalues = getValorisationData($db, $search_ref, $search_label, $search_warehouse, $search_date, $limit, $offset, $sortfield, $sortorder);
 
 	// Créer le nom du fichier avec la date
 	$filename = 'valorisation_stock_' . dol_print_date($search_date, '%Y%m%d');
@@ -339,6 +519,8 @@ function exportToExcel($db, $search_ref, $search_label, $search_warehouse, $sear
 	echo '<tr style="font-weight:bold; background-color:#f0f0f0;">';
 	echo '<td>' . $langs->trans("Ref") . '</td>';
 	echo '<td>' . $langs->trans("Label") . '</td>';
+	echo '<td>' . $langs->trans("Entrepôts") . '</td>';
+
 	echo '<td>' . $langs->trans("Stock à date") . '</td>';
 	echo '<td>' . $langs->trans("Stock actuel") . '</td>';
 	echo '<td>' . $langs->trans("Dernier prix fournisseur") . '</td>';
@@ -353,12 +535,29 @@ function exportToExcel($db, $search_ref, $search_label, $search_warehouse, $sear
 		$stock_actuel = $data['stock_actuel'];
 		$supplier_unit_price = $data['supplier_unit_price'];
 		$valuation = $data['valuation'];
-
+		if ($obj->ref === '1325835000') {
+			$stock_date = $stock_date / 10;
+			$stock_actuel = $stock_actuel / 10;
+			$valuation = $valuation / 10;
+		}
 		$total_valuation += $valuation;
 
 		echo '<tr>';
 		echo '<td>' . htmlspecialchars($obj->ref) . '</td>';
 		echo '<td>' . htmlspecialchars($obj->label) . '</td>';
+		// Entrepôts (détail par entrepôt ou "Tous entrepôts")
+		if (!empty($data['warehouse_details'])) {
+			$entrepots = explode('|', $data['warehouse_details']);
+			$entrepot_list = array();
+			foreach ($entrepots as $item) {
+				list($whLabel, $qty) = explode(':', $item);
+				$entrepot_list[] = $whLabel;
+			}
+			$entrepots_display = implode(', ', $entrepot_list);
+		} else {
+			$entrepots_display = dol_escape_htmltag($obj->warehouse_label);
+		}
+		echo '<td>' . $entrepots_display . '</td>';
 		echo '<td style="text-align:center;">' . $stock_date . '</td>';
 		echo '<td style="text-align:center;">' . $stock_actuel . '</td>';
 		echo '<td style="text-align:right;">' . number_format($supplier_unit_price, 2, ',', ' ') . '</td>';
@@ -396,8 +595,9 @@ if (!GETPOST('confirmmassaction', 'alpha') && $massaction != 'presend' && $massa
 
 // Action d'export Excel
 if ($action == 'export_excel' && !empty($search_date)) {
-	exportToExcel($db, $search_ref, $search_label, $search_warehouse, $search_date, $sortfield, $sortorder);
+	exportToExcel($db, $search_ref, $search_label, $search_warehouse, $search_date, $sortfield, $sortorder, $limit, $offset);
 }
+
 
 /*
  * View
@@ -430,7 +630,7 @@ print '<tr class="oddeven">';
 print '<td><label for="limit">' . $langs->trans("Limit") . '</label></td>';
 print '<td>';
 print '<select name="limit" id="limit" class="flat maxwidth200">';
-$limits = array(100, 250, 500, 1000);
+$limits = array(10, 500, 1000, 2000, 3000);
 foreach ($limits as $limitval) {
 	$selected = ($limit == $limitval) ? ' selected="selected"' : '';
 	print '<option value="' . $limitval . '"' . $selected . '>' . $limitval . ' ' . $langs->trans("elements") . '</option>';
@@ -516,11 +716,13 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 	print '<tr class="liste_titre">';
 	print_liste_field_titre($langs->trans("Ref"), $_SERVER["PHP_SELF"], "p.ref", "", $param, "", $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("Label"), $_SERVER["PHP_SELF"], "p.label", "", $param, "", $sortfield, $sortorder);
+	print_liste_field_titre($langs->trans("Entrepôts"), $_SERVER["PHP_SELF"], "", "", $param, "", $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("Stock à date"), $_SERVER["PHP_SELF"], "", "", $param, "center", $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("Stock actuel"), $_SERVER["PHP_SELF"], "stock_actuel", "", $param, "center", $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("Dernier prix fournisseur"), $_SERVER["PHP_SELF"], "supplier_price", "", $param, "right", $sortfield, $sortorder);
 	print_liste_field_titre($langs->trans("Valuation"), $_SERVER["PHP_SELF"], "valuation", "", $param, "right", $sortfield, $sortorder);
 	print_liste_field_titre('', $_SERVER["PHP_SELF"], "", "", $param, "", $sortfield, $sortorder, 'center maxwidthsearch ');
+	$next_sortorder = ($sortorder === 'ASC') ? 'DESC' : 'ASC';
 	print "</tr>\n";
 
 	// Récupérer les données
@@ -528,12 +730,22 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 
 	// Afficher les résultats
 	$total_valuation = 0;
+	$nbdisplayed = 0;
+	$has_more = count($arrayofvalues) > $limit;
+
 	foreach ($arrayofvalues as $data) {
+		if ($nbdisplayed >= $limit) break;
 		$obj = $data['obj'];
 		$stock_date = $data['stock_date'];
 		$stock_actuel = $data['stock_actuel'];
 		$supplier_unit_price = $data['supplier_unit_price'];
 		$valuation = $data['valuation'];
+
+		if ($obj->ref === '1325835000') {
+			// $stock_date = $stock_date / 10;
+			// $stock_actuel = $stock_actuel / 10;
+			$valuation = $valuation / 10;
+		}
 
 		$total_valuation += $valuation;
 
@@ -550,6 +762,20 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 		// Libellé
 		print '<td class="tdoverflowmax200" title="' . dol_escape_htmltag($obj->label) . '">';
 		print dol_escape_htmltag($obj->label);
+		print '</td>';
+
+		// Entrepôts
+		print '<td>';
+		if (!empty($data['warehouse_details'])) {
+			$warehouses = explode('|', $data['warehouse_details']);
+			foreach ($warehouses as $w) {
+				list($whLabel, $qty) = explode(':', $w);
+				print '<div>' . dol_escape_htmltag($whLabel) . '</div>';
+			}
+		} else {
+			print $langs->trans("Tous entrepôts");
+		}
+
 		print '</td>';
 
 		// Stock à date
@@ -594,6 +820,7 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 		print '<td></td>';
 		print '<td></td>';
 		print '<td></td>';
+		print '<td></td>';
 		print '<td class="right"><strong>' . $langs->trans("Total") . '</strong></td>';
 		print '<td class="right"><strong>' . price($total_valuation) . '</strong></td>';
 		print '<td></td>';
@@ -620,6 +847,8 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 	if (GETPOST('search_datemonth', 'int')) $params[] = 'search_datemonth=' . (int)GETPOST('search_datemonth', 'int');
 	if (GETPOST('search_dateyear', 'int')) $params[] = 'search_dateyear=' . (int)GETPOST('search_dateyear', 'int');
 	$params[] = 'action=search'; // Important pour maintenir l'affichage du tableau
+	$params[] = 'limit=' . $limit;
+	$params[] = 'action=search';
 
 	$baseurl = $url . (count($params) ? '?' . implode('&', $params) : '');
 
@@ -627,7 +856,7 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 	if ($page > 0) {
 		print '<a class="button" href="' . $baseurl . '&page=' . $pageprev . '">&laquo; Page précédente</a> ';
 	}
-
+	print '<strong>' . $langs->trans("Page") . ' ' . ($page + 1) . '</strong>';
 	// Page suivante
 	if (count($arrayofvalues) > $limit) {
 		print '<a class="button" href="' . $baseurl . '&page=' . $pagenext . '">Page suivante &raquo;</a>';
