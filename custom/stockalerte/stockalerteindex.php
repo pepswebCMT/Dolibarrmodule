@@ -52,7 +52,8 @@ if ($action == 'create_order' && $fk_fournisseur && !empty($selected_products)) 
 
 	if ($order_id > 0) {
 		foreach ($selected_products as $product_id) {
-			$sql = "SELECT p.rowid, p.ref, pfp.price, pe.conditionnementpalette as cond_pal
+			$sql = "SELECT p.rowid, p.ref, p.label, pfp.price, pe.conditionnementpalette as cond_pal,
+                           pfp.ref_fourn, pfp.desc_fourn
                     FROM " . MAIN_DB_PREFIX . "product as p
                     LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid AND pfp.fk_soc = " . ((int) $fk_fournisseur) . "
                     LEFT JOIN " . MAIN_DB_PREFIX . "product_extrafields as pe ON pe.fk_object = p.rowid
@@ -62,7 +63,27 @@ if ($action == 'create_order' && $fk_fournisseur && !empty($selected_products)) 
 			$resql = $db->query($sql);
 			if ($resql && ($obj = $db->fetch_object($resql))) {
 				$qty_to_order = (!empty($obj->cond_pal) && is_numeric($obj->cond_pal)) ? (int)$obj->cond_pal : 1;
-				$order->addline('', $obj->price, $qty_to_order, 20, 0, 0, $product_id, 0, '', '', 'HT');
+
+				// Construction de la description pour la ligne de commande
+				$description = $obj->ref . ' - ' . $obj->label;
+				if (!empty($obj->desc_fourn)) {
+					$description .= ' - ' . $obj->desc_fourn;
+				}
+
+				// Ajout de la ligne avec description complète
+				$order->addline(
+					$description,           // Description avec référence produit
+					$obj->price,           // Prix unitaire
+					$qty_to_order,         // Quantité
+					20,                    // Taux TVA
+					0,                     // Remise ligne
+					0,                     // Remise ligne 2
+					$product_id,           // ID produit
+					0,                     // ID variante
+					$obj->ref_fourn,       // Référence fournisseur (Dolibarr l'affiche automatiquement)
+					'',                    // Date de livraison
+					'HT'                   // Type de prix
+				);
 			}
 		}
 		$db->commit();
@@ -73,7 +94,6 @@ if ($action == 'create_order' && $fk_fournisseur && !empty($selected_products)) 
 		setEventMessages($order->error, $order->errors, 'errors');
 	}
 }
-
 if (!isset($_POST['search'])) {
 	$_POST['search'] = 1;
 }
@@ -156,61 +176,39 @@ function calculateVirtualStockDetails($product_id, $db)
 }
 
 // Construction de la requête SQL simplifiée
-$sql = "SELECT p.rowid, p.ref, p.label, p.seuil_stock_alerte, ps.reel, 
-               e.ref as entrepot_ref, e.rowid as entrepot_id, e.lieu as entrepot_lieu, 
-               s.nom as fournisseur_nom, s.rowid as fournisseur_id";
+$sql = "SELECT 
+    p.rowid, 
+    p.ref, 
+    p.label, 
+    p.seuil_stock_alerte, 
+    e.ref as entrepot_ref, 
+    e.rowid as entrepot_id, 
+    e.lieu as entrepot_lieu, 
+    s.nom as fournisseur_nom, 
+    s.rowid as fournisseur_id
+FROM " . MAIN_DB_PREFIX . "product AS p
 
-if ($show_all) {
-	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
+LEFT JOIN " . MAIN_DB_PREFIX . "product_stock AS ps ON ps.fk_product = p.rowid
+LEFT JOIN " . MAIN_DB_PREFIX . "entrepot AS e ON e.rowid = ps.fk_entrepot
+LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price AS pfp ON pfp.fk_product = p.rowid
+LEFT JOIN " . MAIN_DB_PREFIX . "societe AS s ON s.rowid = pfp.fk_soc
 
-	// Stock
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON e.rowid = ps.fk_entrepot";
+WHERE p.tosell = 1
+  AND p.seuil_stock_alerte IS NOT NULL
+";
 
-	// Fournisseur
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
+// Appliquer les filtres si définis
+if ($fk_entrepot > 0) {
+	$sql .= " AND ps.fk_entrepot = " . (int)$fk_entrepot;
+}
 
-	$sql .= " WHERE p.tosell = 1";
-	$sql .= " AND p.seuil_stock_alerte IS NOT NULL";
-
-	if ($fk_entrepot > 0) {
-		$sql .= " AND ps.fk_entrepot = " . (int)$fk_entrepot;
-	}
-
-	if ($fk_fournisseur > 0) {
-		$sql .= " AND pfp.fk_soc = " . (int)$fk_fournisseur;
-	}
-
-
-	$sql .= " GROUP BY p.rowid";
-	$sql .= " ORDER BY p.ref ASC";
-} else {
-	// Si on n'affiche que les produits en alerte
-	$sql .= " FROM " . MAIN_DB_PREFIX . "product as p";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_stock as ps ON ps.fk_product = p.rowid";
-
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON e.rowid = ps.fk_entrepot";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "product_fournisseur_price as pfp ON pfp.fk_product = p.rowid";
-	$sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "societe as s ON s.rowid = pfp.fk_soc";
-
-	$sql .= " WHERE p.tosell = 1 AND p.seuil_stock_alerte IS NOT NULL";
-
-	if ($fk_entrepot > 0) {
-		$sql .= " AND ps.fk_entrepot = " . $fk_entrepot;
-	}
-
-	if ($fk_fournisseur > 0) {
-		$sql .= " AND EXISTS (
-		SELECT 1 FROM " . MAIN_DB_PREFIX . "product_fournisseur_price as subpfp
-		WHERE subpfp.fk_product = p.rowid AND subpfp.fk_soc = " . $fk_fournisseur . "
-	)";
-	}
+if ($fk_fournisseur > 0) {
+	$sql .= " AND pfp.fk_soc = " . (int)$fk_fournisseur;
 }
 
 $sql .= " GROUP BY p.rowid";
-
 $sql .= " ORDER BY p.ref ASC";
+
 
 // Exécution de la requête et affichage des résultats
 $resql = $db->query($sql);

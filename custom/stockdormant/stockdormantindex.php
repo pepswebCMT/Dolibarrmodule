@@ -62,10 +62,17 @@ $search_date_end = dol_mktime(23, 59, 59, GETPOST('search_date_endmonth', 'int')
 $search_ref = GETPOST('search_ref', 'alpha');
 $search_label = GETPOST('search_label', 'alpha');
 $search_warehouse = GETPOST('search_warehouse', 'int');
+$default_warehouse_id = 7; // ID de l'entrepôt par défaut à définir ici
+
+$search_warehouse = GETPOST('search_warehouse', 'int');
+if (empty($search_warehouse)) {
+	$search_warehouse = $default_warehouse_id;
+}
+
 
 if (empty($search_date_start) && empty($search_date_end)) {
 	$search_date_end = dol_now();
-	$search_date_start = dol_time_plus_duree($search_date_end, -6, 'm');
+	$search_date_start = dol_time_plus_duree($search_date_end, -3, 'm');
 }
 
 if (GETPOST('button_removefilter', 'alpha')) {
@@ -103,7 +110,7 @@ print '<tr><td>' . $langs->trans("Ref") . '</td><td><input type="text" name="sea
 print '<td>' . $langs->trans("Label") . '</td><td><input type="text" name="search_label" value="' . dol_escape_htmltag($search_label) . '" size="20"></td></tr>';
 
 print '<tr><td>' . $langs->trans("Warehouse") . '</td><td colspan="3">';
-print $formproduct->selectWarehouses($search_warehouse, 'search_warehouse', '', 1, 0, 0, '', 0, 0, array(), 'maxwidth200');
+print $formproduct->selectWarehouses($search_warehouse, 'search_warehouse', '', 0, 0, 0, '', 0, 0, array(), 'maxwidth200');
 print '</td></tr>';
 
 print '<tr><td colspan="4" class="center">';
@@ -121,7 +128,7 @@ if ($search_date_start && $search_date_end) {
 	print '<th>' . $langs->trans("Label") . '</th>';
 	print '<th class="right">' . $langs->trans("Stock") . '</th>';
 	print '<th class="right">' . $langs->trans("Dernier prix d'achat") . ' (' . $langs->trans("HT") . ')</th>';
-	print '<th class="right">' . $langs->trans("StockValue") . ' (' . $langs->trans("HT") . ')</th>';
+	print '<th class="right">' . $langs->trans("Valeur de stock") . ' (' . $langs->trans("HT") . ')</th>';
 	print '<th class="right">' . $langs->trans("Date du dernier mouvement") . '</th>';
 	print '</tr>';
 
