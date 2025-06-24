@@ -89,7 +89,7 @@ $form = new Form($db);
 $formfile = new FormFile($db);
 $formproduct = new FormProduct($db);
 
-llxHeader('', $langs->trans("Stock dormant Test"));
+llxHeader('', $langs->trans("Stock dormant"));
 print load_fiche_titre($langs->trans("Stock dormant"), '', 'stockdormant.png@stockdormant');
 
 // === Formulaire de recherche ===
