@@ -90,7 +90,7 @@ $formfile = new FormFile($db);
 $formproduct = new FormProduct($db);
 
 llxHeader('', $langs->trans("Stock dormant "));
-print load_fiche_titre($langs->trans("Stock dormant "), '', 'stockdormant.png@stockdormant');
+print load_fiche_titre($langs->trans("Stock dormant test"), '', 'stockdormant.png@stockdormant');
 
 // === Formulaire de recherche ===
 print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
