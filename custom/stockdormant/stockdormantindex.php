@@ -63,6 +63,11 @@ $search_ref = GETPOST('search_ref', 'alpha');
 $search_label = GETPOST('search_label', 'alpha');
 $search_warehouse = GETPOST('search_warehouse', 'int');
 $default_warehouse_id = 7; // ID de l'entrepôt par défaut à définir ici
+$sortfield = GETPOST('sortfield', 'aZ09comma');
+$sortorder = GETPOST('sortorder', 'aZ09comma');
+
+if (!$sortfield) $sortfield = 'p.ref'; // tri par défaut
+if (!$sortorder) $sortorder = 'ASC';
 
 $search_warehouse = GETPOST('search_warehouse', 'int');
 if (empty($search_warehouse)) {
@@ -124,12 +129,17 @@ if ($search_date_start && $search_date_end) {
 	print '<div class="div-table-responsive-no-min">';
 	print '<table class="noborder centpercent">';
 	print '<tr class="liste_titre">';
-	print '<th>' . $langs->trans("Ref") . '</th>';
-	print '<th>' . $langs->trans("Label") . '</th>';
-	print '<th class="right">' . $langs->trans("Stock") . '</th>';
-	print '<th class="right">' . $langs->trans("Dernier prix d'achat") . ' (' . $langs->trans("HT") . ')</th>';
-	print '<th class="right">' . $langs->trans("Valeur de stock") . ' (' . $langs->trans("HT") . ')</th>';
-	print '<th class="right">' . $langs->trans("Date du dernier mouvement") . '</th>';
+	print '<th><a href="' . $_SERVER["PHP_SELF"] . '?sortfield=p.ref&sortorder=' . (($sortfield == 'p.ref' && $sortorder == 'ASC') ? 'DESC' : 'ASC') . $param . '">' . $langs->trans("Ref") . '</a></th>';
+
+	print '<th><a href="' . $_SERVER["PHP_SELF"] . '?sortfield=p.label&sortorder=' . (($sortfield == 'p.label' && $sortorder == 'ASC') ? 'DESC' : 'ASC') . $param . '">' . $langs->trans("Label") . '</a></th>';
+
+	print '<th class="right"><a href="' . $_SERVER["PHP_SELF"] . '?sortfield=ps.reel&sortorder=' . (($sortfield == 'ps.reel' && $sortorder == 'ASC') ? 'DESC' : 'ASC') . $param . '">' . $langs->trans("Stock") . '</a></th>';
+
+	print '<th class="right"><a href="' . $_SERVER["PHP_SELF"] . '?sortfield=last_purchase_price&sortorder=' . (($sortfield == 'last_purchase_price' && $sortorder == 'ASC') ? 'DESC' : 'ASC') . $param . '">' . $langs->trans("Dernier prix d\'achat") . ' (' . $langs->trans("HT") . ')</a></th>';
+
+	print '<th class="right">' . $langs->trans("Valeur de stock") . ' (' . $langs->trans("HT") . ')</th>'; // pas de tri direct car champ calculé
+
+	print '<th class="right"><a href="' . $_SERVER["PHP_SELF"] . '?sortfield=last_movement&sortorder=' . (($sortfield == 'last_movement' && $sortorder == 'ASC') ? 'DESC' : 'ASC') . $param . '">' . $langs->trans("Date du dernier mouvement") . '</a></th>';
 	print '</tr>';
 
 	$sql = "SELECT DISTINCT p.rowid, p.ref, p.label, p.price, p.pmp, ps.reel as stock_reel,";
@@ -153,7 +163,7 @@ if ($search_date_start && $search_date_end) {
 
 	if ($search_ref) $sql .= " AND p.ref LIKE '%" . $db->escape($search_ref) . "%'";
 	if ($search_label) $sql .= " AND p.label LIKE '%" . $db->escape($search_label) . "%'";
-	$sql .= " ORDER BY last_movement ASC, p.ref ASC";
+	$sql .= " ORDER BY $sortfield $sortorder";
 
 	$resql = $db->query($sql);
 	if ($resql) {
