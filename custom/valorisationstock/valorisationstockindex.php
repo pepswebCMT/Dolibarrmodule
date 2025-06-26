@@ -767,11 +767,15 @@ if (!empty($search_date) && (GETPOST('button_search', 'alpha') || $action == 'se
 		// Entrepôts
 		print '<td>';
 		if (!empty($data['warehouse_details'])) {
+			// Cas multi-entrepôts (Tous les entrepôts)
 			$warehouses = explode('|', $data['warehouse_details']);
 			foreach ($warehouses as $w) {
 				list($whLabel, $qty) = explode(':', $w);
 				print '<div>' . dol_escape_htmltag($whLabel) . '</div>';
 			}
+		} elseif (!empty($obj->warehouse_label)) {
+			// Cas entrepôt unique sélectionné
+			print dol_escape_htmltag($obj->warehouse_label);
 		} else {
 			print $langs->trans("Tous entrepôts");
 		}
